@@ -1,0 +1,1 @@
+var SmashJS = SmashJS || {};
