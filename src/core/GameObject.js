@@ -4,8 +4,8 @@
  * instances.
  */
 
-SmashJS.GameObject = function() {
-  SmashJS.BaseObject.call(this);
+SmashJS.GameObject = function(name) {
+  SmashJS.BaseObject.call(this, name);
 
   // By having a broadcast Signal object on each GameObject, components
   // can easily send notifications to others without hard coupling
