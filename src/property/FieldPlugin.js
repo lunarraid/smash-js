@@ -3,7 +3,7 @@ SmashJS.Property.FieldPlugin = function() {};
 SmashJS.Property.FieldPlugin.prototype.resolve = function(context, cached, propertyInfo) {
   var walk = context;
   for (var i = 0; i < cached.length - 1; i++) {
-    walk[cached[i]] = walk;
+    walk = walk[cached[i]];
   }
 
   propertyInfo.object = walk;
@@ -16,7 +16,7 @@ SmashJS.Property.FieldPlugin.prototype.resolveFull = function(context, cached, p
   }
   var walk = context;
   for (var i = arrayOffset; i < cached.length - 1; i++) {
-    walk[cached[i]] = walk;
+    walk = walk[cached[i]];
   }
 
   propertyInfo.object = walk;

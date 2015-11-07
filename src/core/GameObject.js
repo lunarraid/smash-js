@@ -55,6 +55,8 @@ SmashJS.GameObject.prototype.addComponent = function(component, name) {
   } else {
     this.doInitialize(component);
   }
+
+  return component;
 };
 
 /**
@@ -159,6 +161,7 @@ SmashJS.GameObject.prototype.destroy = function() {
   for (var key in this._components) {
     this.removeComponent(this._components[key]);
   }
+  this.broadcast.removeAll();
   SmashJS.BaseObject.prototype.destroy.call(this);
 };
 

@@ -17,8 +17,8 @@ SmashJS.Signal = function() {
 
   // enforce dispatch to aways work on same context (#47)
   var self = this;
-  this.dispatch = function(){
-      Signal.prototype.dispatch.apply(self, arguments);
+  this.dispatch = function() {
+    SmashJS.Signal.prototype.dispatch.apply(self, arguments);
   };
 
 };

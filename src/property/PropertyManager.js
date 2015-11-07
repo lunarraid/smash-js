@@ -47,8 +47,10 @@ SmashJS.PropertyManager.prototype.applyBinding = function(scope, binding) {
 
   // Now do the mapping.
   var bindingCached = this.bindingCache[binding];
-  scope[bindingCached[0]] = this.findProperty(scope, bindingCached[1], this.cachedPi).getValue();
-};
+  var newValue = this.findProperty(scope, bindingCached[1], this.cachedPi).getValue();
+  if (scope[bindingCached[0]] !== newValue) {
+    scope[bindingCached[0]] = newValue;
+  }};
 
 SmashJS.PropertyManager.prototype.getProperty = function(scope, property, defaultValue) {
   // Look it up.

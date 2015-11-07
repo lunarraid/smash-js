@@ -430,10 +430,12 @@ SmashJS.TimeManager.prototype.advance = function(deltaTime, suppressSafety) {
   this.duringAdvance = true;
   this._interpolationFactor = this.elapsed / TICK_RATE_MS;
 
+  var animDT = deltaTime * 0.001;
+
   for(var i = 0; i < this.animatedObjects.length; i++) {
     var animatedObject = this.animatedObjects[i];
     if (animatedObject) {
-      animatedObject.listener.onFrame();
+      animatedObject.listener.onFrame(animDT);
     }
   }
 

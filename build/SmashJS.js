@@ -518,6 +518,8 @@ SmashJS.GameObject.prototype.addComponent = function(component, name) {
   } else {
     this.doInitialize(component);
   }
+
+  return component;
 };
 
 /**
@@ -622,6 +624,7 @@ SmashJS.GameObject.prototype.destroy = function() {
   for (var key in this._components) {
     this.removeComponent(this._components[key]);
   }
+  this.broadcast.removeAll();
   SmashJS.BaseObject.prototype.destroy.call(this);
 };
 
@@ -779,6 +782,7 @@ SmashJS.GameGroup.prototype.noteAdd = function(object) {
 
 SmashJS.GameGroup.prototype.registerManager = function(clazz, instance) {
   this._managers.put(clazz, instance);
+  instance.owningGroup = this;
   if (instance.initialize) {
     instance.initialize();
   }
@@ -1040,8 +1044,8 @@ SmashJS.Signal = function() {
 
   // enforce dispatch to aways work on same context (#47)
   var self = this;
-  this.dispatch = function(){
-      Signal.prototype.dispatch.apply(self, arguments);
+  this.dispatch = function() {
+    SmashJS.Signal.prototype.dispatch.apply(self, arguments);
   };
 
 };
@@ -1459,7 +1463,7 @@ SmashJS.Property.FieldPlugin = function() {};
 SmashJS.Property.FieldPlugin.prototype.resolve = function(context, cached, propertyInfo) {
   var walk = context;
   for (var i = 0; i < cached.length - 1; i++) {
-    walk[cached[i]] = walk;
+    walk = walk[cached[i]];
   }
 
   propertyInfo.object = walk;
@@ -1472,7 +1476,7 @@ SmashJS.Property.FieldPlugin.prototype.resolveFull = function(context, cached, p
   }
   var walk = context;
   for (var i = arrayOffset; i < cached.length - 1; i++) {
-    walk[cached[i]] = walk;
+    walk = walk[cached[i]];
   }
 
   propertyInfo.object = walk;
@@ -1558,8 +1562,10 @@ SmashJS.PropertyManager.prototype.applyBinding = function(scope, binding) {
 
   // Now do the mapping.
   var bindingCached = this.bindingCache[binding];
-  scope[bindingCached[0]] = this.findProperty(scope, bindingCached[1], this.cachedPi).getValue();
-};
+  var newValue = this.findProperty(scope, bindingCached[1], this.cachedPi).getValue();
+  if (scope[bindingCached[0]] !== newValue) {
+    scope[bindingCached[0]] = newValue;
+  }};
 
 SmashJS.PropertyManager.prototype.getProperty = function(scope, property, defaultValue) {
   // Look it up.
@@ -2016,10 +2022,12 @@ SmashJS.TimeManager.prototype.advance = function(deltaTime, suppressSafety) {
   this.duringAdvance = true;
   this._interpolationFactor = this.elapsed / TICK_RATE_MS;
 
+  var animDT = deltaTime * 0.001;
+
   for(var i = 0; i < this.animatedObjects.length; i++) {
     var animatedObject = this.animatedObjects[i];
     if (animatedObject) {
-      animatedObject.listener.onFrame();
+      animatedObject.listener.onFrame(animDT);
     }
   }
 

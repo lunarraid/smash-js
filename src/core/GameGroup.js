@@ -76,6 +76,7 @@ SmashJS.GameGroup.prototype.noteAdd = function(object) {
 
 SmashJS.GameGroup.prototype.registerManager = function(clazz, instance) {
   this._managers.put(clazz, instance);
+  instance.owningGroup = this;
   if (instance.initialize) {
     instance.initialize();
   }
