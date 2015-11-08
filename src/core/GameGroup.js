@@ -1,3 +1,6 @@
+var BaseObject = require("./BaseObject.js");
+var SmashMap = require("../util/SmashMap.js");
+
 /**
  * GameGroup provides lifecycle functionality (GameObjects in it are destroy()ed
  * when it is destroy()ed), as well as manager registration (see registerManager).
@@ -6,29 +9,29 @@
  * be initialize()ed.
  */
 
-SmashJS.GameGroup = function() {
-  SmashJS.BaseObject.call(this);
+var GameGroup = function() {
+  BaseObject.call(this);
   this._items = [];
-  this._managers = new SmashJS.util.Map();
+  this._managers = new SmashMap();
 };
 
-SmashJS.GameGroup.prototype = Object.create(SmashJS.BaseObject.prototype);
+GameGroup.prototype = Object.create(BaseObject.prototype);
 
-SmashJS.GameGroup.prototype.constructor = SmashJS.GameGroup;
+GameGroup.prototype.constructor = GameGroup;
 
 /**
  * Does this GameGroup directly contain the specified object?
  */
 
-SmashJS.GameGroup.prototype.contains = function(object) {
+GameGroup.prototype.contains = function(object) {
   return (object.owningGroup === this);
 };
 
-SmashJS.GameGroup.prototype.getGameObjectAt = function(index) {
+GameGroup.prototype.getGameObjectAt = function(index) {
   return this._items[index];
 };
 
-SmashJS.GameGroup.prototype.initialize = function() {
+GameGroup.prototype.initialize = function() {
   // Groups can stand alone so don't do the _owningGroup check in the parent class.
   // If no owning group, add to the global list for debug purposes.
   //if (this.owningGroup === null) {
@@ -37,8 +40,8 @@ SmashJS.GameGroup.prototype.initialize = function() {
   //}
 };
 
-SmashJS.GameGroup.prototype.destroy = function() {
-  SmashJS.BaseObject.prototype.destroy.call(this);
+GameGroup.prototype.destroy = function() {
+  BaseObject.prototype.destroy.call(this);
 
   // Wipe the items.
   while (this.length) {
@@ -53,7 +56,7 @@ SmashJS.GameGroup.prototype.destroy = function() {
   }
 };
 
-SmashJS.GameGroup.prototype.noteRemove = function(object) {
+GameGroup.prototype.noteRemove = function(object) {
   // Get it out of the list.
   var idx = this._items.indexOf(object);
   if (idx == -1) {
@@ -62,7 +65,7 @@ SmashJS.GameGroup.prototype.noteRemove = function(object) {
   this._items.splice(idx, 1);
 };
 
-SmashJS.GameGroup.prototype.noteAdd = function(object) {
+GameGroup.prototype.noteAdd = function(object) {
   this._items.push(object);
 };
 
@@ -74,7 +77,7 @@ SmashJS.GameGroup.prototype.noteAdd = function(object) {
  * has this method.
  */
 
-SmashJS.GameGroup.prototype.registerManager = function(clazz, instance) {
+GameGroup.prototype.registerManager = function(clazz, instance) {
   this._managers.put(clazz, instance);
   instance.owningGroup = this;
   if (instance.initialize) {
@@ -87,7 +90,7 @@ SmashJS.GameGroup.prototype.registerManager = function(clazz, instance) {
  * Get a previously registered manager.
  */
 
-SmashJS.GameGroup.prototype.getManager = function(clazz) {
+GameGroup.prototype.getManager = function(clazz) {
   var res = this._managers.get(clazz);
   if (!res) {
     if (this.owningGroup) {
@@ -103,7 +106,7 @@ SmashJS.GameGroup.prototype.getManager = function(clazz) {
  * Return the GameObject at the specified index.
  */
 
-SmashJS.GameGroup.prototype.lookup = function(name) {
+GameGroup.prototype.lookup = function(name) {
   for (var i = 0; i < this._items.length; i++) {
     if (this._items[i].name === name) {
       return this._items[i];
@@ -120,10 +123,12 @@ SmashJS.GameGroup.prototype.lookup = function(name) {
  * How many GameObjects are in this group?
  */
 
-Object.defineProperty(SmashJS.GameGroup.prototype, "length", {
+Object.defineProperty(GameGroup.prototype, "length", {
 
   get: function() {
     return this._items.length;
   }
 
 });
+
+module.exports = GameGroup;

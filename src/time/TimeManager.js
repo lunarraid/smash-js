@@ -1,3 +1,5 @@
+var SimplePriorityQueue = require("../util/SimplePriorityQueue.js");
+
 /**
  * The number of ticks that will happen every second.
  */
@@ -71,7 +73,7 @@ Object.defineProperty(ScheduleEntry.prototype, "priority", {
  * display remains smooth.</p>
  */
 
-SmashJS.TimeManager = function() {
+var TimeManager = function() {
   this.deferredMethodQueue = [];
   this._virtualTime = 0;
   this._interpolationFactor = 0;
@@ -84,7 +86,7 @@ SmashJS.TimeManager = function() {
   this._platformTime = 0;
   this._frameCounter = 0;
   this.duringAdvance = false;
-  this.thinkHeap = new SmashJS.util.SimplePriorityQueue(4096);
+  this.thinkHeap = new SimplePriorityQueue(4096);
 
   /**
    * If true, disables warnings about losing ticks.
@@ -101,15 +103,15 @@ SmashJS.TimeManager = function() {
    this.timeScale = 1;
 };
 
-SmashJS.TimeManager.prototype.constructor = SmashJS.TimeManager;
+TimeManager.prototype.constructor = TimeManager;
 
-SmashJS.TimeManager.prototype.initialize = function() {
+TimeManager.prototype.initialize = function() {
   if (!this.started) {
     this.start();
   }
 };
 
-SmashJS.TimeManager.prototype.destroy = function() {
+TimeManager.prototype.destroy = function() {
   if (this.started) {
     stop();
   }
@@ -121,7 +123,7 @@ SmashJS.TimeManager.prototype.destroy = function() {
  * will have to be called to restart it.
  */
 
-SmashJS.TimeManager.prototype.start = function() {
+TimeManager.prototype.start = function() {
   if (this.started) {
       //Logger.warn(this, "start", "The ProcessManager is already started.");
       return;
@@ -138,7 +140,7 @@ SmashJS.TimeManager.prototype.start = function() {
  * example, pause the game.
  */
 
-SmashJS.TimeManager.prototype.stop = function() {
+TimeManager.prototype.stop = function() {
   if (!this.started) {
     //Logger.warn(this, "stop", "The TimeManager isn't started.");
     return;
@@ -158,7 +160,7 @@ SmashJS.TimeManager.prototype.stop = function() {
  * @param arguments The arguments to pass to the function when it is called.
  */
 
-SmashJS.TimeManager.prototype.schedule = function(delay, thisObject, callback) {
+TimeManager.prototype.schedule = function(delay, thisObject, callback) {
   var args = Array.prototype.slice.call(arguments, 3);
 
   if (!this.started) {
@@ -184,7 +186,7 @@ SmashJS.TimeManager.prototype.schedule = function(delay, thisObject, callback) {
  * priority is -Number.MAX_VALUE.
  */
 
-SmashJS.TimeManager.prototype.addAnimatedObject = function(object, priority) {
+TimeManager.prototype.addAnimatedObject = function(object, priority) {
   if (priority === undefined) {
     priority = 0;
   }
@@ -201,7 +203,7 @@ SmashJS.TimeManager.prototype.addAnimatedObject = function(object, priority) {
  * priority is -Number.MAX_VALUE.
  */
 
-SmashJS.TimeManager.prototype.addTickedObject = function(object, priority) {
+TimeManager.prototype.addTickedObject = function(object, priority) {
   if (priority === undefined) {
     priority = 0;
   }
@@ -214,7 +216,7 @@ SmashJS.TimeManager.prototype.addTickedObject = function(object, priority) {
  * is removed, then added.
  */
 
-SmashJS.TimeManager.prototype.queueObject = function(object) {
+TimeManager.prototype.queueObject = function(object) {
   // Assert if this is in the past.
   if (object.nextThinkTime < this._virtualTime) {
     throw new Error("Tried to queue something into the past, but no flux capacitor is present!");
@@ -234,7 +236,7 @@ SmashJS.TimeManager.prototype.queueObject = function(object) {
  * was not in the queue.
  */
 
-SmashJS.TimeManager.prototype.dequeueObject = function(object) {
+TimeManager.prototype.dequeueObject = function(object) {
   if(this.thinkHeap.contains(object)) {
     this.thinkHeap.remove(object);
   }
@@ -246,7 +248,7 @@ SmashJS.TimeManager.prototype.dequeueObject = function(object) {
  * @param object The object to remove.
  */
 
-SmashJS.TimeManager.prototype.removeAnimatedObject = function(object) {
+TimeManager.prototype.removeAnimatedObject = function(object) {
   this.removeObject(object, this.animatedObjects);
 };
 
@@ -256,7 +258,7 @@ SmashJS.TimeManager.prototype.removeAnimatedObject = function(object) {
  * @param object The object to remove.
  */
 
-SmashJS.TimeManager.prototype.removeTickedObject = function(object) {
+TimeManager.prototype.removeTickedObject = function(object) {
   this.removeObject(object, this.tickedObjects);
 };
 
@@ -268,7 +270,7 @@ SmashJS.TimeManager.prototype.removeTickedObject = function(object) {
  * @param args Any arguments.
  */
 
-SmashJS.TimeManager.prototype.callLater = function(context, method) {
+TimeManager.prototype.callLater = function(context, method) {
   var args = Array.prototype.slice.call(arguments, 2);
   var dm = {
     context: context,
@@ -286,7 +288,7 @@ SmashJS.TimeManager.prototype.callLater = function(context, method) {
  * @param list List to add to.
  */
 
-SmashJS.TimeManager.prototype.addObject = function(object, priority, list) {
+TimeManager.prototype.addObject = function(object, priority, list) {
   // If we are in a tick, defer the add.
   if (this.duringAdvance) {
       throw new Error("Unimplemented!");
@@ -332,7 +334,7 @@ SmashJS.TimeManager.prototype.addObject = function(object, priority, list) {
  * @param list List from which to remove.
  */
 
-SmashJS.TimeManager.prototype.removeObject = function(object, list) {
+TimeManager.prototype.removeObject = function(object, list) {
   if (this.listenerCount == 1 && this.thinkHeap.size === 0) {
     this.stop();
   }
@@ -361,7 +363,7 @@ SmashJS.TimeManager.prototype.removeObject = function(object, list) {
  * Main callback; this is called every frame and allows game logic to run.
  */
 
-SmashJS.TimeManager.prototype.update = function() {
+TimeManager.prototype.update = function() {
 
   if (!this.started) {
     return;
@@ -385,7 +387,7 @@ SmashJS.TimeManager.prototype.update = function() {
   this.lastTime = currentTime;
 };
 
-SmashJS.TimeManager.prototype.advance = function(deltaTime, suppressSafety) {
+TimeManager.prototype.advance = function(deltaTime, suppressSafety) {
   if (suppressSafety === undefined) {
     suppressSafety = false;
   }
@@ -465,7 +467,7 @@ SmashJS.TimeManager.prototype.advance = function(deltaTime, suppressSafety) {
   }
 };
 
-SmashJS.TimeManager.prototype.fireTick = function() {
+TimeManager.prototype.fireTick = function() {
   // Ticks always happen on interpolation boundary.
   this._interpolationFactor = 0.0;
 
@@ -489,7 +491,7 @@ SmashJS.TimeManager.prototype.fireTick = function() {
   this.elapsed -= TICK_RATE_MS;
 };
 
-SmashJS.TimeManager.prototype.processScheduledObjects = function() {
+TimeManager.prototype.processScheduledObjects = function() {
   // Do any deferred methods.
   var oldDeferredMethodQueue = this.deferredMethodQueue;
   if (oldDeferredMethodQueue.length > 0)
@@ -527,7 +529,7 @@ SmashJS.TimeManager.prototype.processScheduledObjects = function() {
   }
 };
 
-SmashJS.TimeManager.prototype.clamp = function(v, min, max) {
+TimeManager.prototype.clamp = function(v, min, max) {
   min = min || 0;
   max = max || 0;
   if (v < min) return min;
@@ -539,7 +541,7 @@ SmashJS.TimeManager.prototype.clamp = function(v, min, max) {
  * Returns true if the process manager is advancing.
  */
 
-Object.defineProperty(SmashJS.TimeManager.prototype, "isTicking", {
+Object.defineProperty(TimeManager.prototype, "isTicking", {
 
   get: function() {
     return this.started;
@@ -552,7 +554,7 @@ Object.defineProperty(SmashJS.TimeManager.prototype, "isTicking", {
  * 1.0 at the end. Useful for smoothly interpolating visual elements.
  */
 
-Object.defineProperty(SmashJS.TimeManager.prototype, "interpolationFactor", {
+Object.defineProperty(TimeManager.prototype, "interpolationFactor", {
 
   get: function() {
     return this._interpolationFactor;
@@ -565,7 +567,7 @@ Object.defineProperty(SmashJS.TimeManager.prototype, "interpolationFactor", {
  * take the time scale into account. Time is in milliseconds.
  */
 
-Object.defineProperty(SmashJS.TimeManager.prototype, "virtualTime", {
+Object.defineProperty(TimeManager.prototype, "virtualTime", {
 
   get: function() {
     return this._virtualTime;
@@ -579,7 +581,7 @@ Object.defineProperty(SmashJS.TimeManager.prototype, "virtualTime", {
  * current frame.
  */
 
-Object.defineProperty(SmashJS.TimeManager.prototype, "platformTime", {
+Object.defineProperty(TimeManager.prototype, "platformTime", {
 
   get: function() {
     return this._platformTime;
@@ -591,7 +593,7 @@ Object.defineProperty(SmashJS.TimeManager.prototype, "platformTime", {
  * Integer identifying this frame. Incremented by one for every frame.
  */
 
-Object.defineProperty(SmashJS.TimeManager.prototype, "frameCounter", {
+Object.defineProperty(TimeManager.prototype, "frameCounter", {
 
   get: function() {
     return this._frameCounter;
@@ -599,7 +601,7 @@ Object.defineProperty(SmashJS.TimeManager.prototype, "frameCounter", {
 
 });
 
-Object.defineProperty(SmashJS.TimeManager.prototype, "msPerTick", {
+Object.defineProperty(TimeManager.prototype, "msPerTick", {
 
   get: function() {
     return TICK_RATE_MS;
@@ -611,10 +613,12 @@ Object.defineProperty(SmashJS.TimeManager.prototype, "msPerTick", {
  * @return How many objects are depending on the TimeManager right now?
  */
 
-Object.defineProperty(SmashJS.TimeManager.prototype, "listenerCount", {
+Object.defineProperty(TimeManager.prototype, "listenerCount", {
 
   get: function() {
     return this.tickedObjects.length + this.animatedObjects.length;
   }
 
 });
+
+module.exports = TimeManager;

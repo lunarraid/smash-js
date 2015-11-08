@@ -6,7 +6,7 @@
  * @constructor
  */
 
-SmashJS.Signal = function() {
+var Signal = function() {
 
   /**
    * @type Array.<SignalBinding>
@@ -18,13 +18,12 @@ SmashJS.Signal = function() {
   // enforce dispatch to aways work on same context (#47)
   var self = this;
   this.dispatch = function() {
-    SmashJS.Signal.prototype.dispatch.apply(self, arguments);
+    Signal.prototype.dispatch.apply(self, arguments);
   };
 
 };
 
-
-SmashJS.Signal.prototype = {
+Signal.prototype = {
 
   /**
   * Signals Version Number
@@ -73,7 +72,7 @@ SmashJS.Signal.prototype = {
             throw new Error('You cannot add'+ (isOnce? '' : 'Once') +'() then add'+ (!isOnce? '' : 'Once') +'() the same listener without removing the relationship first.');
         }
     } else {
-        binding = new SmashJS.SignalBinding(this, listener, isOnce, listenerContext, priority);
+        binding = new SignalBinding(this, listener, isOnce, listenerContext, priority);
         this._addBinding(binding);
     }
 
@@ -252,3 +251,5 @@ SmashJS.Signal.prototype = {
   }
 
 };
+
+module.exports = Signal;

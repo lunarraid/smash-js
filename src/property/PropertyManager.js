@@ -1,19 +1,22 @@
-SmashJS.PropertyManager = function() {
+var PropertyInfo = require("./PropertyInfo.js");
+var ComponentPlugin = require("./ComponentPlugin.js");
+
+var PropertyManager = function() {
   this.propertyPlugins = {};
   this.parseCache = {};
-  this.cachedPi = new SmashJS.Property.PropertyInfo();
+  this.cachedPi = new PropertyInfo();
   this.bindingCache = {};
   // Set up default plugins.
-  this.registerPropertyType("@", new SmashJS.Property.ComponentPlugin());
+  this.registerPropertyType("@", new ComponentPlugin());
 };
 
-SmashJS.PropertyManager.prototype.constructor = SmashJS.PropertyManager;
+PropertyManager.prototype.constructor = PropertyManager;
 
-SmashJS.PropertyManager.prototype.registerPropertyType = function(prefix, plugin) {
+PropertyManager.prototype.registerPropertyType = function(prefix, plugin) {
   this.propertyPlugins[prefix] = plugin;
 };
 
-SmashJS.PropertyManager.prototype.findProperty = function(scope, property, providedInfo) {
+PropertyManager.prototype.findProperty = function(scope, property, providedInfo) {
   if (property === null || property.length === 0) {
     return null;
   }
@@ -39,7 +42,7 @@ SmashJS.PropertyManager.prototype.findProperty = function(scope, property, provi
   return providedInfo;
 };
 
-SmashJS.PropertyManager.prototype.applyBinding = function(scope, binding) {
+PropertyManager.prototype.applyBinding = function(scope, binding) {
   // Cache parsing if possible.
   if (!this.bindingCache[binding]) {
     this.bindingCache[binding] = binding.split("||");
@@ -52,7 +55,7 @@ SmashJS.PropertyManager.prototype.applyBinding = function(scope, binding) {
     scope[bindingCached[0]] = newValue;
   }};
 
-SmashJS.PropertyManager.prototype.getProperty = function(scope, property, defaultValue) {
+PropertyManager.prototype.getProperty = function(scope, property, defaultValue) {
   // Look it up.
   var resPi = this.findProperty(scope, property, this.cachedPi);
 
@@ -64,7 +67,7 @@ SmashJS.PropertyManager.prototype.getProperty = function(scope, property, defaul
   }
 };
 
-SmashJS.PropertyManager.prototype.setProperty = function(scope, property, value) {
+PropertyManager.prototype.setProperty = function(scope, property, value) {
   // Look it up.
   var resPi = this.findProperty(scope, property, this.cachedPi);
 
@@ -74,3 +77,5 @@ SmashJS.PropertyManager.prototype.setProperty = function(scope, property, value)
   }
   resPi.setValue(value);
 };
+
+module.exports = PropertyManager;

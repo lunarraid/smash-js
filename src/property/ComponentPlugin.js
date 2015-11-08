@@ -1,8 +1,10 @@
-SmashJS.Property.ComponentPlugin = function() {
-  this.fieldResolver = new SmashJS.Property.FieldPlugin();
+var FieldPlugin = require("./FieldPlugin.js");
+
+var ComponentPlugin = function() {
+  this.fieldResolver = new FieldPlugin();
 };
 
-SmashJS.Property.ComponentPlugin.prototype.resolve = function(context, cached, propertyInfo) {
+ComponentPlugin.prototype.resolve = function(context, cached, propertyInfo) {
   // Context had better be an entity.
   var entity;
   if (context.isBaseObject) {
@@ -25,4 +27,6 @@ SmashJS.Property.ComponentPlugin.prototype.resolve = function(context, cached, p
   }
 };
 
-SmashJS.Property.ComponentPlugin.prototype.constructor = SmashJS.Property.ComponentPlugin;
+ComponentPlugin.prototype.constructor = ComponentPlugin;
+
+module.exports = ComponentPlugin;

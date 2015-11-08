@@ -1,1 +1,0 @@
-SmashJS.Property = SmashJS.Property || {};

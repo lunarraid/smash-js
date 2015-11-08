@@ -11,22 +11,22 @@
 * 5. When you're done, call destroy(). (foo.destroy();)
 */
 
-SmashJS.BaseObject = function(name) {
+var BaseObject = function(name) {
   this._active = false;
   this._owningGroup = null;
   this._sets = [];
   this._name = name || "";
 };
 
-SmashJS.BaseObject.prototype.isBaseObject = true;
+BaseObject.prototype.isBaseObject = true;
 
 // Internal
-SmashJS.BaseObject.prototype.noteSetAdd = function(set) {
+BaseObject.prototype.noteSetAdd = function(set) {
   this._sets.push(set);
 };
 
 // Internal
-SmashJS.BaseObject.prototype.noteSetRemove = function(set) {
+BaseObject.prototype.noteSetRemove = function(set) {
   var idx = this._sets.indexOf(set);
     if(idx == -1) {
       throw new Error("Tried to remove BaseObject from a GameSet it didn't know it was in!");
@@ -39,7 +39,7 @@ SmashJS.BaseObject.prototype.noteSetRemove = function(set) {
  * before calling this (ie, set owningGroup).
  */
 
-SmashJS.BaseObject.prototype.initialize = function() {
+BaseObject.prototype.initialize = function() {
   // Error if not in a group.
   if (this._owningGroup === null) {
     throw new Error("Can't initialize a BaseObject without an owning GameGroup!");
@@ -52,7 +52,7 @@ SmashJS.BaseObject.prototype.initialize = function() {
  * other end of life cleanup.
  */
 
-SmashJS.BaseObject.prototype.destroy = function() {
+BaseObject.prototype.destroy = function() {
   // Remove from sets.
   while (this._sets.length > 0) {
     this._sets[this._sets.length-1].remove(this);
@@ -67,13 +67,13 @@ SmashJS.BaseObject.prototype.destroy = function() {
   this._active = false;
 };
 
-SmashJS.BaseObject.prototype.constructor = SmashJS.BaseObject;
+BaseObject.prototype.constructor = BaseObject;
 
 /**
  * Name of the GameObject. Used for dynamic lookups and debugging.
  */
 
-Object.defineProperty(SmashJS.BaseObject.prototype, "name", {
+Object.defineProperty(BaseObject.prototype, "name", {
 
   get: function() {
     return this._name;
@@ -92,7 +92,7 @@ Object.defineProperty(SmashJS.BaseObject.prototype, "name", {
  * What GameSets reference this GameObject?
  */
 
-Object.defineProperty(SmashJS.BaseObject.prototype, "sets", {
+Object.defineProperty(BaseObject.prototype, "sets", {
 
   get: function() {
     return this._sets;
@@ -105,7 +105,7 @@ Object.defineProperty(SmashJS.BaseObject.prototype, "sets", {
  * and the owningGroup has to be set before calling initialize().
  */
 
-Object.defineProperty(SmashJS.BaseObject.prototype, "owningGroup", {
+Object.defineProperty(BaseObject.prototype, "owningGroup", {
 
   get: function() {
     return this._owningGroup;
@@ -125,3 +125,5 @@ Object.defineProperty(SmashJS.BaseObject.prototype, "owningGroup", {
   }
 
 });
+
+module.exports = BaseObject;

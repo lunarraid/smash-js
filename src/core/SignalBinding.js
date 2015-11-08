@@ -16,7 +16,7 @@
 * @param {Number} [priority] The priority level of the event listener. (default = 0).
 */
 
-SmashJS.SignalBinding = function(signal, listener, isOnce, listenerContext, priority) {
+var SignalBinding = function(signal, listener, isOnce, listenerContext, priority) {
 
   /**
    * Handler function bound to the signal.
@@ -55,7 +55,7 @@ SmashJS.SignalBinding = function(signal, listener, isOnce, listenerContext, prio
   this._priority = priority || 0;
 };
 
-SmashJS.SignalBinding.prototype = {
+SignalBinding.prototype = {
 
   /**
    * If binding is active and should be executed.
@@ -142,3 +142,5 @@ SmashJS.SignalBinding.prototype = {
   }
 
 };
+
+module.exports = SignalBinding;

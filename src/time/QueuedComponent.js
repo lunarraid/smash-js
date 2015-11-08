@@ -1,3 +1,6 @@
+var GameComponent = require("../core/GameComponent.js");
+var TimeManager = require("./TimeManager.js");
+
 /**
  * Base class for components which want to use think notifications.
  *
@@ -10,13 +13,13 @@
  * QueuedComponent.</p>
  */
 
-SmashJS.QueuedComponent = function() {
-  SmashJS.GameComponent.call(this);
+var QueuedComponent = function() {
+  GameComponent.call(this);
 };
 
-SmashJS.QueuedComponent.prototype = Object.create(SmashJS.GameComponent.prototype);
+QueuedComponent.prototype = Object.create(GameComponent.prototype);
 
-SmashJS.QueuedComponent.prototype.constructor = SmashJS.QueuedComponent;
+QueuedComponent.prototype.constructor = QueuedComponent;
 
 /**
  * Schedule the next time this component should think.
@@ -24,36 +27,37 @@ SmashJS.QueuedComponent.prototype.constructor = SmashJS.QueuedComponent;
  * @param timeTillThink Time in ms from now at which to execute the function (approximately).
  */
 
-SmashJS.QueuedComponent.prototype.think = function(nextContext, nextCallback, timeTillThink) {
+QueuedComponent.prototype.think = function(nextContext, nextCallback, timeTillThink) {
   this.nextThinkContext = nextContext;
   this.nextThinkTime = this.timeManager.virtualTime + timeTillThink;
   this.nextThinkCallback = nextCallback;
   this.timeManager.queueObject(this);
 };
 
-SmashJS.QueuedComponent.prototype.unthink = function() {
+QueuedComponent.prototype.unthink = function() {
   this.timeManager.dequeueObject(this);
 };
 
-SmashJS.QueuedComponent.prototype.onAdd = function() {
-  SmashJS.GameComponent.prototype.onAdd.call(this);
-  this.timeManager = this.owner.getManager(SmashJS.TimeManager);
+QueuedComponent.prototype.onAdd = function() {
+  GameComponent.prototype.onAdd.call(this);
+  this.timeManager = this.owner.getManager(TimeManager);
   this.nextThinkContext = null;
   this.nextThinkCallback = null;
 };
 
-SmashJS.QueuedComponent.prototype.onRemove = function() {
-  SmashJS.GameComponent.prototype.onRemove.call(this);
-  // Do not allow us to be called back if we are still
-  // in the queue.
+QueuedComponent.prototype.onRemove = function() {
+  GameComponent.prototype.onRemove.call(this);
+  // Do not allow us to be called back if we are still in the queue.
   this.nextThinkContext = null;
   this.nextThinkCallback = null;
 };
 
-Object.defineProperty(SmashJS.QueuedComponent.prototype, "priority", {
+Object.defineProperty(QueuedComponent.prototype, "priority", {
 
   get: function() {
     return -this.nextThinkTime;
   }
 
 });
+
+module.exports = QueuedComponent;

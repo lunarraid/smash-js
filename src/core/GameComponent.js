@@ -5,14 +5,14 @@
  * the component is added to or removed from a GameObject.
  */
 
-SmashJS.GameComponent = function() {
+var GameComponent = function() {
   this.bindings = [];
   this._safetyFlag = false;
   this._name = "";
   this._owner = null;
 };
 
-SmashJS.GameComponent.prototype.isGameComponent = true;
+GameComponent.prototype.isGameComponent = true;
 
 /**
  * Components include a powerful data binding system. You can set up
@@ -26,7 +26,7 @@ SmashJS.GameComponent.prototype.isGameComponent = true;
  *                          Usually "@componentName.fieldName".
  */
 
-SmashJS.GameComponent.prototype.addBinding = function(fieldName, propertyReference) {
+GameComponent.prototype.addBinding = function(fieldName, propertyReference) {
   this.bindings.push(fieldName + "||" + propertyReference);
 };
 
@@ -35,7 +35,7 @@ SmashJS.GameComponent.prototype.addBinding = function(fieldName, propertyReferen
  * parameters.
  */
 
-SmashJS.GameComponent.prototype.removeBinding = function(fieldName, propertyReference) {
+GameComponent.prototype.removeBinding = function(fieldName, propertyReference) {
   var binding = fieldName + "||" + propertyReference;
   var idx = this.bindings.indexOf(binding);
   if (idx === -1) {
@@ -49,7 +49,7 @@ SmashJS.GameComponent.prototype.removeBinding = function(fieldName, propertyRefe
  * called at start of onTick or onFrame handler.
  */
 
-SmashJS.GameComponent.prototype.applyBindings = function() {
+GameComponent.prototype.applyBindings = function() {
   if (!this.propertyManager) {
     throw new Error("Couldn't find a PropertyManager instance");
   }
@@ -59,8 +59,8 @@ SmashJS.GameComponent.prototype.applyBindings = function() {
   }
 };
 
-SmashJS.GameComponent.prototype.doAdd = function() {
-  this.propertyManager = this.owner.getManager(SmashJS.PropertyManager);
+GameComponent.prototype.doAdd = function() {
+  this.propertyManager = this.owner.getManager(PropertyManager);
   this._safetyFlag = false;
   this.onAdd();
   if (this._safetyFlag === false) {
@@ -68,7 +68,7 @@ SmashJS.GameComponent.prototype.doAdd = function() {
   }
 };
 
-SmashJS.GameComponent.prototype.doRemove = function() {
+GameComponent.prototype.doRemove = function() {
   this._safetyFlag = false;
   this.onRemove();
   if (this._safetyFlag === false) {
@@ -81,7 +81,7 @@ SmashJS.GameComponent.prototype.doRemove = function() {
  * logic here.
  */
 
-SmashJS.GameComponent.prototype.onAdd = function() {
+GameComponent.prototype.onAdd = function() {
   this._safetyFlag = true;
 };
 
@@ -90,13 +90,13 @@ SmashJS.GameComponent.prototype.onAdd = function() {
  * teardown logic here.
  */
 
-SmashJS.GameComponent.prototype.onRemove = function() {
+GameComponent.prototype.onRemove = function() {
   this._safetyFlag = true;
 };
 
-SmashJS.GameComponent.prototype.constructor = SmashJS.GameComponent;
+GameComponent.prototype.constructor = GameComponent;
 
-Object.defineProperty(SmashJS.GameComponent.prototype, "name", {
+Object.defineProperty(GameComponent.prototype, "name", {
 
   get: function() {
     return this._name;
@@ -115,10 +115,12 @@ Object.defineProperty(SmashJS.GameComponent.prototype, "name", {
  * What GameObject contains us, if any?
  */
 
-Object.defineProperty(SmashJS.GameComponent.prototype, "owner", {
+Object.defineProperty(GameComponent.prototype, "owner", {
 
   get: function() {
     return this._owner;
   }
 
 });
+
+module.exports = GameComponent;

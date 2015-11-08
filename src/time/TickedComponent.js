@@ -1,11 +1,13 @@
+var GameComponent = require("../core/GameComponent.js");
+var TimeManager = require("./TimeManager.js");
 
 /**
  * Base class for components that need to perform actions every tick. This
  * needs to be subclassed to be useful.
  */
 
-SmashJS.TickedComponent = function() {
-  SmashJS.GameComponent.call(this);
+var TickedComponent = function() {
+  GameComponent.call(this);
 
   // The update priority for this component. Higher numbered priorities have
   // onInterpolateTick and onTick called before lower priorities.
@@ -15,32 +17,32 @@ SmashJS.TickedComponent = function() {
   this._isRegisteredForUpdates = false;
 };
 
-SmashJS.TickedComponent.prototype = Object.create(SmashJS.GameComponent.prototype);
+TickedComponent.prototype = Object.create(GameComponent.prototype);
 
-SmashJS.TickedComponent.prototype.constructor = SmashJS.TickedComponent;
+TickedComponent.prototype.constructor = TickedComponent;
 
-SmashJS.TickedComponent.prototype.onTick = function(tickRate) {
+TickedComponent.prototype.onTick = function(tickRate) {
   this.applyBindings();
 };
 
-SmashJS.TickedComponent.prototype.onAdd = function() {
-  SmashJS.GameComponent.prototype.onAdd.call(this);
-  this.timeManager = this.owner.getManager(SmashJS.TimeManager);
+TickedComponent.prototype.onAdd = function() {
+  GameComponent.prototype.onAdd.call(this);
+  this.timeManager = this.owner.getManager(TimeManager);
   // This causes the component to be registerd if it isn't already.
   this.registerForTicks = this.registerForTicks;
 };
 
-SmashJS.TickedComponent.prototype.onRemove = function() {
+TickedComponent.prototype.onRemove = function() {
   // Make sure we are unregistered.
   this.registerTicks = false;
-  SmashJS.GameComponent.prototype.onRemove.call(this);
+  GameComponent.prototype.onRemove.call(this);
 };
 
 /**
  * Set to register/unregister for tick updates.
  */
 
-Object.defineProperty(SmashJS.TickedComponent.prototype, "registerForTicks", {
+Object.defineProperty(TickedComponent.prototype, "registerForTicks", {
 
   get: function() {
     return this._registerForUpdates;
@@ -68,3 +70,5 @@ Object.defineProperty(SmashJS.TickedComponent.prototype, "registerForTicks", {
   }
 
 });
+
+module.exports = TickedComponent;

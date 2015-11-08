@@ -1,10 +1,13 @@
+var GameComponent = require("../core/GameComponent.js");
+var TimeManager = require("./TimeManager.js");
+
 /**
  * Base class for components that need to perform actions every frame. This
  * needs to be subclassed to be useful.
  */
 
-SmashJS.AnimatedComponent = function() {
-  SmashJS.GameComponent.call(this);
+var AnimatedComponent = function() {
+  GameComponent.call(this);
 
   // The update priority for this component. Higher numbered priorities have
   // OnFrame called before lower priorities.
@@ -14,32 +17,32 @@ SmashJS.AnimatedComponent = function() {
   this._isRegisteredForUpdates = false;
 };
 
-SmashJS.AnimatedComponent.prototype = Object.create(SmashJS.GameComponent.prototype);
+AnimatedComponent.prototype = Object.create(GameComponent.prototype);
 
-SmashJS.AnimatedComponent.prototype.constructor = SmashJS.AnimatedComponent;
+AnimatedComponent.prototype.constructor = AnimatedComponent;
 
-SmashJS.AnimatedComponent.prototype.onFrame = function() {
+AnimatedComponent.prototype.onFrame = function() {
   this.applyBindings();
 };
 
-SmashJS.AnimatedComponent.prototype.onAdd = function() {
-  SmashJS.GameComponent.prototype.onAdd.call(this);
-  this.timeManager = this.owner.getManager(SmashJS.TimeManager);
-  // This causes the component to be registerd if it isn't already.
+AnimatedComponent.prototype.onAdd = function() {
+  GameComponent.prototype.onAdd.call(this);
+  this.timeManager = this.owner.getManager(TimeManager);
+  // This causes the component to be registered if it isn't already.
   this.registerForUpdates = this.registerForUpdates;
 };
 
-SmashJS.AnimatedComponent.prototype.onRemove = function() {
+AnimatedComponent.prototype.onRemove = function() {
   // Make sure we are unregistered.
   this.registerForUpdates = false;
-  SmashJS.GameComponent.prototype.onRemove.call(this);
+  GameComponent.prototype.onRemove.call(this);
 };
 
 /**
  * Set to register/unregister for frame updates.
  */
 
-Object.defineProperty(SmashJS.AnimatedComponent.prototype, "registerForUpdates", {
+Object.defineProperty(AnimatedComponent.prototype, "registerForUpdates", {
 
   get: function() {
     return this._registerForUpdates;
@@ -67,3 +70,5 @@ Object.defineProperty(SmashJS.AnimatedComponent.prototype, "registerForUpdates",
   }
 
 });
+
+module.exports = AnimatedComponent;

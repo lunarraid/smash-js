@@ -1,25 +1,29 @@
+var BaseObject = require("./BaseObject.js");
+var PropertyManager = require("../property/PropertyManager.js");
+var Signal = require("./Signal.js");
+
 /**
  * Container class for GameComponent. Most game objects are made by
  * instantiating GameObject and filling it with one or more GameComponent
  * instances.
  */
 
-SmashJS.GameObject = function(name) {
-  SmashJS.BaseObject.call(this, name);
+var GameObject = function(name) {
+  BaseObject.call(this, name);
 
   // By having a broadcast Signal object on each GameObject, components
   // can easily send notifications to others without hard coupling
-  this.broadcast = new SmashJS.Signal();
+  this.broadcast = new Signal();
 
   this._deferring = true;
   this._components = {};
 };
 
-SmashJS.GameObject.prototype = Object.create(SmashJS.BaseObject.prototype);
+GameObject.prototype = Object.create(BaseObject.prototype);
 
-SmashJS.GameObject.prototype.constructor = SmashJS.GameObject;
+GameObject.prototype.constructor = GameObject;
 
-SmashJS.GameObject.prototype.doInitialize = function(component) {
+GameObject.prototype.doInitialize = function(component) {
   component._owner = this;
   component.doAdd();
 };
@@ -29,7 +33,7 @@ SmashJS.GameObject.prototype.doInitialize = function(component) {
  * the component will be initialized immediately.
  */
 
-SmashJS.GameObject.prototype.addComponent = function(component, name) {
+GameObject.prototype.addComponent = function(component, name) {
   if (name) {
     component.name = name;
   }
@@ -63,7 +67,7 @@ SmashJS.GameObject.prototype.addComponent = function(component, name) {
  * Remove a component from this game object.
  */
 
-SmashJS.GameObject.prototype.removeComponent = function(component) {
+GameObject.prototype.removeComponent = function(component) {
   if (component.owner !== this) {
     throw "Tried to remove a component that does not belong to this GameGameObject.";
   }
@@ -82,7 +86,7 @@ SmashJS.GameObject.prototype.removeComponent = function(component) {
  * Look up a component by name.
  */
 
-SmashJS.GameObject.prototype.lookupComponent = function(name) {
+GameObject.prototype.lookupComponent = function(name) {
   return this._components[name];
 };
 
@@ -91,7 +95,7 @@ SmashJS.GameObject.prototype.lookupComponent = function(name) {
  * game object.
  */
 
-SmashJS.GameObject.prototype.getAllComponents = function() {
+GameObject.prototype.getAllComponents = function() {
   var out = [];
   for (var key in this._components) {
     out.push(this._components[key]);
@@ -112,8 +116,8 @@ SmashJS.GameObject.prototype.getAllComponents = function() {
  * for any registered data bindings.
  */
 
-SmashJS.GameObject.prototype.initialize = function() {
-  SmashJS.BaseObject.prototype.initialize.call(this);
+GameObject.prototype.initialize = function() {
+  BaseObject.prototype.initialize.call(this);
 
   // Look for un-added members.
   for (var key in this)
@@ -157,15 +161,15 @@ SmashJS.GameObject.prototype.initialize = function() {
  * destruction (ie, remove from any groups or sets).
  */
 
-SmashJS.GameObject.prototype.destroy = function() {
+GameObject.prototype.destroy = function() {
   for (var key in this._components) {
     this.removeComponent(this._components[key]);
   }
   this.broadcast.removeAll();
-  SmashJS.BaseObject.prototype.destroy.call(this);
+  BaseObject.prototype.destroy.call(this);
 };
 
-SmashJS.GameObject.prototype.getManager = function(clazz) {
+GameObject.prototype.getManager = function(clazz) {
   return this.owningGroup.getManager(clazz);
 };
 
@@ -175,8 +179,8 @@ SmashJS.GameObject.prototype.getManager = function(clazz) {
  * @param defaultValue A default value to return if the desired property is absent.
  */
 
-SmashJS.GameObject.prototype.getProperty = function(property, defaultValue) {
-  return this.getManager(SmashJS.PropertyManager).getProperty(this, property, defaultValue);
+GameObject.prototype.getProperty = function(property, defaultValue) {
+  return this.getManager(PropertyManager).getProperty(this, property, defaultValue);
 };
 
 /**
@@ -185,8 +189,8 @@ SmashJS.GameObject.prototype.getProperty = function(property, defaultValue) {
  * @param value Value to set if the property is found.
  */
 
-SmashJS.GameObject.prototype.setProperty = function(property, value) {
-  this.getManager(SmashJS.PropertyManager).setProperty(this, property, value);
+GameObject.prototype.setProperty = function(property, value) {
+  this.getManager(PropertyManager).setProperty(this, property, value);
 };
 
 /**
@@ -197,7 +201,7 @@ SmashJS.GameObject.prototype.setProperty = function(property, value) {
  * onAdd methods are called.
  */
 
-Object.defineProperty(SmashJS.GameObject.prototype, "deferring", {
+Object.defineProperty(GameObject.prototype, "deferring", {
 
   get: function() {
     return this._deferring;
@@ -240,3 +244,5 @@ Object.defineProperty(SmashJS.GameObject.prototype, "deferring", {
   }
 
 });
+
+module.exports = GameObject;

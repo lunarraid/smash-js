@@ -23,6 +23,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+var SmashMap = require("./SmashMap.js");
+
 /**
  * A priority queue to manage prioritized data.
  * The implementation is based on the heap structure.
@@ -36,14 +38,14 @@
  * @param size The size of the priority queue.
  */
 
-SmashJS.util.SimplePriorityQueue = function(size) {
+var SimplePriorityQueue = function(size) {
   this._size = size + 1;
   this._heap = new Array(this._size);
-  this._posLookup = new SmashJS.util.Map();
+  this._posLookup = new SmashMap();
   this._count = 0;
 };
 
-SmashJS.util.SimplePriorityQueue.prototype.constructor = SmashJS.util.SimplePriorityQueue;
+SimplePriorityQueue.prototype.constructor = SimplePriorityQueue;
 
 
 /**
@@ -53,7 +55,7 @@ SmashJS.util.SimplePriorityQueue.prototype.constructor = SmashJS.util.SimplePrio
  * @return False if the queue is full, otherwise true.
  */
 
-SmashJS.util.SimplePriorityQueue.prototype.enqueue = function(obj) {
+SimplePriorityQueue.prototype.enqueue = function(obj) {
   if (this._count + 1 < this._size) {
     this._count++;
     this._heap[this._count] = obj;
@@ -71,7 +73,7 @@ SmashJS.util.SimplePriorityQueue.prototype.enqueue = function(obj) {
  * @return The queue's front item or null if the heap is empty.
  */
 
-SmashJS.util.SimplePriorityQueue.prototype.dequeue = function() {
+SimplePriorityQueue.prototype.dequeue = function() {
   if (this._count >= 1) {
     var o = this._heap[1];
     this._posLookup.remove(o);
@@ -94,7 +96,7 @@ SmashJS.util.SimplePriorityQueue.prototype.dequeue = function() {
  * @return True if the repriorization succeeded, otherwise false.
  */
 
-SmashJS.util.SimplePriorityQueue.prototype.reprioritize = function(obj, newPriority) {
+SimplePriorityQueue.prototype.reprioritize = function(obj, newPriority) {
   if (!this._posLookup.get(obj)) {
     return false;
   }
@@ -119,7 +121,7 @@ SmashJS.util.SimplePriorityQueue.prototype.reprioritize = function(obj, newPrior
  * @return True if removal succeeded, otherwise false.
  */
 
-SmashJS.util.SimplePriorityQueue.prototype.remove = function(obj) {
+SimplePriorityQueue.prototype.remove = function(obj) {
   if (this._count >= 1) {
     var pos = this._posLookup.get(obj);
 
@@ -139,21 +141,21 @@ SmashJS.util.SimplePriorityQueue.prototype.remove = function(obj) {
   return false;
 };
 
-SmashJS.util.SimplePriorityQueue.prototype.contains = function(obj) {
+SimplePriorityQueue.prototype.contains = function(obj) {
   return this._posLookup.get(obj) !== null;
 };
 
-SmashJS.util.SimplePriorityQueue.prototype.clear = function() {
+SimplePriorityQueue.prototype.clear = function() {
   this._heap = new Array(this._size);
   this._posLookup = new Map();
   this._count = 0;
 };
 
-SmashJS.util.SimplePriorityQueue.prototype.isEmpty = function() {
+SimplePriorityQueue.prototype.isEmpty = function() {
   return this._count === 0;
 };
 
-SmashJS.util.SimplePriorityQueue.prototype.toArray = function() {
+SimplePriorityQueue.prototype.toArray = function() {
   return this._heap.slice(1, this._count + 1);
 };
 
@@ -163,7 +165,7 @@ SmashJS.util.SimplePriorityQueue.prototype.toArray = function() {
  * @return A string representing the current object.
  */
 
-SmashJS.util.SimplePriorityQueue.prototype.toString = function() {
+SimplePriorityQueue.prototype.toString = function() {
   return "[SimplePriorityQueue, size=" + _size +"]";
 };
 
@@ -171,7 +173,7 @@ SmashJS.util.SimplePriorityQueue.prototype.toString = function() {
  * Prints all elements (for debug/demo purposes only).
  */
 
-SmashJS.util.SimplePriorityQueue.prototype.dump = function() {
+SimplePriorityQueue.prototype.dump = function() {
   if (this._count === 0) {
     return "SimplePriorityQueue (empty)";
   }
@@ -185,7 +187,7 @@ SmashJS.util.SimplePriorityQueue.prototype.dump = function() {
   return s;
 };
 
-SmashJS.util.SimplePriorityQueue.prototype.walkUp = function(index) {
+SimplePriorityQueue.prototype.walkUp = function(index) {
   var parent = index >> 1;
   var parentObj;
 
@@ -210,7 +212,7 @@ SmashJS.util.SimplePriorityQueue.prototype.walkUp = function(index) {
   this._posLookup.put(tmp, index);
 };
 
-SmashJS.util.SimplePriorityQueue.prototype.walkDown = function(index) {
+SimplePriorityQueue.prototype.walkDown = function(index) {
   var child = index << 1;
   var childObj;
 
@@ -246,7 +248,7 @@ SmashJS.util.SimplePriorityQueue.prototype.walkDown = function(index) {
  * The front item or null if the heap is empty.
  */
 
-Object.defineProperty(SmashJS.util.SimplePriorityQueue.prototype, "front", {
+Object.defineProperty(SimplePriorityQueue.prototype, "front", {
 
   get: function() {
     return this._heap[1];
@@ -258,7 +260,7 @@ Object.defineProperty(SmashJS.util.SimplePriorityQueue.prototype, "front", {
  * The maximum capacity.
  */
 
-Object.defineProperty(SmashJS.util.SimplePriorityQueue.prototype, "maxSize", {
+Object.defineProperty(SimplePriorityQueue.prototype, "maxSize", {
 
   get: function() {
     return this._size;
@@ -267,10 +269,12 @@ Object.defineProperty(SmashJS.util.SimplePriorityQueue.prototype, "maxSize", {
 });
 
 
-Object.defineProperty(SmashJS.util.SimplePriorityQueue.prototype, "size", {
+Object.defineProperty(SimplePriorityQueue.prototype, "size", {
 
   get: function() {
     return this._count;
   }
 
 });
+
+module.exports = SimplePriorityQueue;
