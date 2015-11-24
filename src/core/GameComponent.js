@@ -1,3 +1,5 @@
+var PropertyManager = require("../property/PropertyManager.js");
+
 /**
  * Base class for most game functionality. Contained in a GameObject.
  *

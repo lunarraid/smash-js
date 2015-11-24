@@ -1,3 +1,5 @@
+var SignalBinding = require('./SignalBinding.js');
+
 /**
  * Custom event broadcaster
  * <br />- inspired by Robert Penner's AS3 Signals.
