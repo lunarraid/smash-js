@@ -277,7 +277,7 @@ TimeManager.prototype.callLater = function(context, method) {
     method: method,
     args: args
   };
-  deferredMethodQueue.push(dm);
+  this.deferredMethodQueue.push(dm);
 };
 
 
@@ -291,8 +291,8 @@ TimeManager.prototype.callLater = function(context, method) {
 TimeManager.prototype.addObject = function(object, priority, list) {
   // If we are in a tick, defer the add.
   if (this.duringAdvance) {
-      throw new Error("Unimplemented!");
-      //group.callLater(addObject, [ object, priority, list]);
+    this.callLater(this, this.addObject, object, priority, list);
+    return;
   }
 
   if (!this.started) {
