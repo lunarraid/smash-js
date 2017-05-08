@@ -1,28 +1,13 @@
-var FieldPlugin = function() {};
+export default class FieldPlugin {
 
-FieldPlugin.prototype.resolve = function(context, cached, propertyInfo) {
-  var walk = context;
-  for (var i = 0; i < cached.length - 1; i++) {
-    walk = walk[cached[i]];
+  resolve(context, cached, propertyInfo, arrayOffset = 0) {
+    var walk = context;
+    var end = cached.length - 1;
+    for (var i = arrayOffset; i < end; i++) {
+      walk = walk[cached[i]];
+    }
+    propertyInfo.object = walk;
+    propertyInfo.field = cached[end];
   }
 
-  propertyInfo.object = walk;
-  propertyInfo.field = cached[cached.length - 1];
-};
-
-FieldPlugin.prototype.resolveFull = function(context, cached, propertyInfo, arrayOffset) {
-  if ( arrayOffset === undefined ) {
-    arrayOffset = 0;
-  }
-  var walk = context;
-  for (var i = arrayOffset; i < cached.length - 1; i++) {
-    walk = walk[cached[i]];
-  }
-
-  propertyInfo.object = walk;
-  propertyInfo.field = cached[cached.length - 1];
-};
-
-FieldPlugin.prototype.constructor = FieldPlugin;
-
-module.exports = FieldPlugin;
+}

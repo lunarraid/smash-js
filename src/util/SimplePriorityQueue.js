@@ -7,14 +7,14 @@
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
+ * 'Software'), to deal in the Software without restriction, including
  * without limitation the rights to use, copy, modify, merge, publish,
  * distribute, sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
@@ -23,7 +23,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-var SmashMap = require("./SmashMap.js");
+import SmashMap from './SmashMap';
 
 /**
  * A priority queue to manage prioritized data.
@@ -32,249 +32,237 @@ var SmashMap = require("./SmashMap.js");
  * <p>This implementation is based on the as3ds PriorityHeap.</p>
  */
 
-/**
- * Initializes a priority queue with a given size.
- *
- * @param size The size of the priority queue.
- */
+ export default class PriorityQueue {
 
-var SimplePriorityQueue = function(size) {
-  this._size = size + 1;
-  this._heap = new Array(this._size);
-  this._posLookup = new SmashMap();
-  this._count = 0;
-};
+  /**
+   * Initializes a priority queue with a given size.
+   *
+   * @param size The size of the priority queue.
+   */
 
-SimplePriorityQueue.prototype.constructor = SimplePriorityQueue;
-
-
-/**
- * Enqueues a prioritized item.
- *
- * @param obj The prioritized data.
- * @return False if the queue is full, otherwise true.
- */
-
-SimplePriorityQueue.prototype.enqueue = function(obj) {
-  if (this._count + 1 < this._size) {
-    this._count++;
-    this._heap[this._count] = obj;
-    this._posLookup.put(obj, this._count);
-    this.walkUp(this._count);
-    return true;
+  constructor(size) {
+    this._size = size + 1;
+    this._heap = new Array(this._size);
+    this._posLookup = new SmashMap();
+    this._count = 0;
   }
-  return false;
-};
 
-/**
- * Dequeues and returns the front item.
- * This is always the item with the highest priority.
- *
- * @return The queue's front item or null if the heap is empty.
- */
+  /**
+   * Enqueues a prioritized item.
+   *
+   * @param obj The prioritized data.
+   * @return False if the queue is full, otherwise true.
+   */
 
-SimplePriorityQueue.prototype.dequeue = function() {
-  if (this._count >= 1) {
-    var o = this._heap[1];
-    this._posLookup.remove(o);
-
-    this._heap[1] = this._heap[this._count];
-    this.walkDown(1);
-
-    this._heap[this._count] = null;
-    this._count--;
-    return o;
-  }
-  return null;
-};
-
-/**
- * Reprioritizes an item.
- *
- * @param obj         The object whose priority is changed.
- * @param newPriority The new priority.
- * @return True if the repriorization succeeded, otherwise false.
- */
-
-SimplePriorityQueue.prototype.reprioritize = function(obj, newPriority) {
-  if (!this._posLookup.get(obj)) {
+  enqueue(obj) {
+    if (this._count + 1 < this._size) {
+      this._count++;
+      this._heap[this._count] = obj;
+      this._posLookup.put(obj, this._count);
+      this.walkUp(this._count);
+      return true;
+    }
     return false;
   }
 
-  var oldPriority = obj.priority;
-  obj.priority = newPriority;
-  var pos = this._posLookup.get(obj);
+  /**
+   * Dequeues and returns the front item.
+   * This is always the item with the highest priority.
+   *
+   * @return The queue's front item or null if the heap is empty.
+   */
 
-  if (newPriority > oldPriority) {
-    this.walkUp(pos);
-  } else {
-    this.walkDown(pos);
+  dequeue() {
+    if (this._count >= 1) {
+      var o = this._heap[1];
+      this._posLookup.remove(o);
+
+      this._heap[1] = this._heap[this._count];
+      this.walkDown(1);
+
+      this._heap[this._count] = null;
+      this._count--;
+      return o;
+    }
+    return null;
   }
 
-  return true;
-};
+  /**
+   * Reprioritizes an item.
+   *
+   * @param obj         The object whose priority is changed.
+   * @param newPriority The new priority.
+   * @return True if the repriorization succeeded, otherwise false.
+   */
 
-/**
- * Removes an item.
- *
- * @param obj The item to remove.
- * @return True if removal succeeded, otherwise false.
- */
+  reprioritize(obj, newPriority) {
+    if (!this._posLookup.get(obj)) {
+      return false;
+    }
 
-SimplePriorityQueue.prototype.remove = function(obj) {
-  if (this._count >= 1) {
+    var oldPriority = obj.priority;
+    obj.priority = newPriority;
     var pos = this._posLookup.get(obj);
 
-    var o = this._heap[pos];
-    this._posLookup.remove(o);
+    if (newPriority > oldPriority) {
+      this.walkUp(pos);
+    } else {
+      this.walkDown(pos);
+    }
 
-    this._heap[pos] = this._heap[this._count];
-
-    this.walkDown(pos);
-
-    this._heap[this._count] = null;
-    this._posLookup.remove(this._count);
-    this._count--;
     return true;
   }
 
-  return false;
-};
+  /**
+   * Removes an item.
+   *
+   * @param obj The item to remove.
+   * @return True if removal succeeded, otherwise false.
+   */
 
-SimplePriorityQueue.prototype.contains = function(obj) {
-  return this._posLookup.get(obj) !== null;
-};
+  remove(obj) {
+    if (this._count >= 1) {
+      var pos = this._posLookup.get(obj);
 
-SimplePriorityQueue.prototype.clear = function() {
-  this._heap = new Array(this._size);
-  this._posLookup = new Map();
-  this._count = 0;
-};
+      var o = this._heap[pos];
+      this._posLookup.remove(o);
 
-SimplePriorityQueue.prototype.isEmpty = function() {
-  return this._count === 0;
-};
+      this._heap[pos] = this._heap[this._count];
 
-SimplePriorityQueue.prototype.toArray = function() {
-  return this._heap.slice(1, this._count + 1);
-};
+      this.walkDown(pos);
 
-/**
- * Prints out a string representing the current object.
- *
- * @return A string representing the current object.
- */
+      this._heap[this._count] = null;
+      this._posLookup.remove(this._count);
+      this._count--;
+      return true;
+    }
 
-SimplePriorityQueue.prototype.toString = function() {
-  return "[SimplePriorityQueue, size=" + _size +"]";
-};
-
-/**
- * Prints all elements (for debug/demo purposes only).
- */
-
-SimplePriorityQueue.prototype.dump = function() {
-  if (this._count === 0) {
-    return "SimplePriorityQueue (empty)";
+    return false;
   }
 
-  var s = "SimplePriorityQueue\n{\n";
-  var k = this._count + 1;
-  for (var i = 1; i < k; i++) {
-    s += "\t" + this._heap[i] + "\n";
+  contains(obj) {
+    return this._posLookup.get(obj) !== null;
   }
-  s += "\n}";
-  return s;
-};
 
-SimplePriorityQueue.prototype.walkUp = function(index) {
-  var parent = index >> 1;
-  var parentObj;
+  clear() {
+    this._heap = new Array(this._size);
+    this._posLookup = new Map();
+    this._count = 0;
+  }
 
-  var tmp = this._heap[index];
-  var p = tmp.priority;
+  isEmpty() {
+    return this._count === 0;
+  }
 
-  while (parent > 0)
-  {
+  toArray() {
+    return this._heap.slice(1, this._count + 1);
+  }
+
+  /**
+   * Prints out a string representing the current object.
+   *
+   * @return A string representing the current object.
+   */
+
+  toString() {
+    return '[SimplePriorityQueue, size=' + _size +']';
+  }
+
+  /**
+   * Prints all elements (for debug/demo purposes only).
+   */
+
+  dump() {
+    if (this._count === 0) {
+      return 'SimplePriorityQueue (empty)';
+    }
+
+    var s = 'SimplePriorityQueue\n{\n';
+    var k = this._count + 1;
+    for (var i = 1; i < k; i++) {
+      s += '\t' + this._heap[i] + '\n';
+    }
+    s += '\n}';
+    return s;
+  }
+
+  walkUp(index) {
+    var parent = index >> 1;
+    var parentObj;
+
+    var tmp = this._heap[index];
+    var p = tmp.priority;
+
+    while (parent > 0)
+    {
       parentObj = this._heap[parent];
 
       if (p - parentObj.priority > 0) {
-          this._heap[index] = parentObj;
-          this._posLookup.put(parentObj, index);
+        this._heap[index] = parentObj;
+        this._posLookup.put(parentObj, index);
 
-          index = parent;
-          parent >>= 1;
-      }
-      else break;
-  }
-
-  this._heap[index] = tmp;
-  this._posLookup.put(tmp, index);
-};
-
-SimplePriorityQueue.prototype.walkDown = function(index) {
-  var child = index << 1;
-  var childObj;
-
-  var tmp = this._heap[index];
-  var p = tmp.priority;
-
-  while (child < this._count) {
-
-    if (child < this._count - 1) {
-      if (this._heap[child].priority - this._heap[child + 1].priority < 0) {
-        child++;
+        index = parent;
+        parent >>= 1;
+      } else {
+        break;
       }
     }
 
-    childObj = this._heap[child];
-
-    if (p - childObj.priority < 0) {
-      this._heap[index] = childObj;
-      this._posLookup.put(childObj, index);
-
-      this._posLookup.put(tmp, child);
-
-      index = child;
-      child <<= 1;
-    }
-    else break;
+    this._heap[index] = tmp;
+    this._posLookup.put(tmp, index);
   }
-  this._heap[index] = tmp;
-  this._posLookup.put(tmp, index);
-};
 
-/**
- * The front item or null if the heap is empty.
- */
+  walkDown(index) {
+    var child = index << 1;
+    var childObj;
 
-Object.defineProperty(SimplePriorityQueue.prototype, "front", {
+    var tmp = this._heap[index];
+    var p = tmp.priority;
 
-  get: function() {
+    while (child < this._count) {
+
+      if (child < this._count - 1) {
+        if (this._heap[child].priority - this._heap[child + 1].priority < 0) {
+          child++;
+        }
+      }
+
+      childObj = this._heap[child];
+
+      if (p - childObj.priority < 0) {
+        this._heap[index] = childObj;
+        this._posLookup.put(childObj, index);
+
+        this._posLookup.put(tmp, child);
+
+        index = child;
+        child <<= 1;
+      } else {
+        break;
+      }
+    }
+    this._heap[index] = tmp;
+    this._posLookup.put(tmp, index);
+  }
+
+  /**
+   * The front item or null if the heap is empty.
+   */
+
+  get front() {
     return this._heap[1];
   }
 
-});
+  /**
+   * The maximum capacity.
+   */
 
-/**
- * The maximum capacity.
- */
-
-Object.defineProperty(SimplePriorityQueue.prototype, "maxSize", {
-
-  get: function() {
+  get maxSize() {
     return this._size;
   }
 
-});
-
-
-Object.defineProperty(SimplePriorityQueue.prototype, "size", {
-
-  get: function() {
+  get size() {
     return this._count;
   }
 
-});
-
-module.exports = SimplePriorityQueue;
+}

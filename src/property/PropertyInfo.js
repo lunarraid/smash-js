@@ -2,28 +2,24 @@
  * Internal class used by Entity to service property lookups.
  */
 
-var PropertyInfo = function() {
-  this.object = null;
-  this.field = null;
-};
+ export default class PropertyInfo {
 
-PropertyInfo.prototype.constructor = PropertyInfo;
-
-PropertyInfo.prototype.getValue = function() {
-  if (this.field) {
-    return this.object[this.field];
-  } else {
-    return this.object;
+  constructor() {
+    this.object = null;
+    this.field = null;
   }
-};
 
-PropertyInfo.prototype.setValue = function(value) {
-  this.object[this.field] = value;
-};
+  getValue() {
+    return this.field ? this.object[this.field] : this.object;
+  }
 
-PropertyInfo.prototype.clear = function() {
-  this.object = null;
-  this.field = null;
-};
+  setValue(value) {
+    this.object[this.field] = value;
+  }
 
-module.exports = PropertyInfo;
+  clear() {
+    this.object = null;
+    this.field = null;
+  }
+
+}

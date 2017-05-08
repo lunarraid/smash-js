@@ -1,5 +1,5 @@
-var GameComponent = require("../core/GameComponent.js");
-var TimeManager = require("./TimeManager.js");
+import GameComponent from '../core/GameComponent';
+import TimeManager from './TimeManager';
 
 /**
  * Base class for components which want to use think notifications.
@@ -13,51 +13,40 @@ var TimeManager = require("./TimeManager.js");
  * QueuedComponent.</p>
  */
 
-var QueuedComponent = function() {
-  GameComponent.call(this);
-};
+export default class QueuedComponent extends GameComponent {
 
-QueuedComponent.prototype = Object.create(GameComponent.prototype);
+  /**
+   * Schedule the next time this component should think.
+   * @param nextCallback Function to be executed.
+   * @param timeTillThink Time in ms from now at which to execute the function (approximately).
+   */
+  think(nextContext, nextCallback, timeTillThink) {
+    this.nextThinkContext = nextContext;
+    this.nextThinkTime = this.timeManager.virtualTime + timeTillThink;
+    this.nextThinkCallback = nextCallback;
+    this.timeManager.queueObject(this);
+  }
 
-QueuedComponent.prototype.constructor = QueuedComponent;
+  unthink() {
+    this.timeManager.dequeueObject(this);
+  }
 
-/**
- * Schedule the next time this component should think.
- * @param nextCallback Function to be executed.
- * @param timeTillThink Time in ms from now at which to execute the function (approximately).
- */
+  onAdd() {
+    super.onAdd();
+    this.timeManager = this.owner.getManager(TimeManager);
+    this.nextThinkContext = null;
+    this.nextThinkCallback = null;
+  }
 
-QueuedComponent.prototype.think = function(nextContext, nextCallback, timeTillThink) {
-  this.nextThinkContext = nextContext;
-  this.nextThinkTime = this.timeManager.virtualTime + timeTillThink;
-  this.nextThinkCallback = nextCallback;
-  this.timeManager.queueObject(this);
-};
+  onRemove() {
+    // Do not allow us to be called back if we are still in the queue.
+    this.nextThinkContext = null;
+    this.nextThinkCallback = null;
+    super.onRemove();
+  }
 
-QueuedComponent.prototype.unthink = function() {
-  this.timeManager.dequeueObject(this);
-};
-
-QueuedComponent.prototype.onAdd = function() {
-  GameComponent.prototype.onAdd.call(this);
-  this.timeManager = this.owner.getManager(TimeManager);
-  this.nextThinkContext = null;
-  this.nextThinkCallback = null;
-};
-
-QueuedComponent.prototype.onRemove = function() {
-  GameComponent.prototype.onRemove.call(this);
-  // Do not allow us to be called back if we are still in the queue.
-  this.nextThinkContext = null;
-  this.nextThinkCallback = null;
-};
-
-Object.defineProperty(QueuedComponent.prototype, "priority", {
-
-  get: function() {
+  get priority() {
     return -this.nextThinkTime;
   }
 
-});
-
-module.exports = QueuedComponent;
+}

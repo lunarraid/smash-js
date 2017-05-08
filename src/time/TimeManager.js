@@ -1,4 +1,4 @@
-var SimplePriorityQueue = require("../util/SimplePriorityQueue.js");
+import SimplePriorityQueue from '../util/SimplePriorityQueue';
 
 /**
  * The number of ticks that will happen every second.
@@ -29,7 +29,7 @@ var TICK_RATE_MS = TICK_RATE * 1000;
  * <p>To prevent this we have a safety limit. Time is dropped so the
  * system can catch up in extraordinary cases. If your game is just
  * slow, then you will see that the ProcessManager can never catch up
- * and you will constantly get the "too many ticks per frame" warning,
+ * and you will constantly get the 'too many ticks per frame' warning,
  * if you have disableSlowWarning set to true.</p>
  */
 
@@ -40,26 +40,20 @@ var MAX_TICKS_PER_FRAME = 5;
  * track scheduled callbacks from schedule().
  */
 
-var ScheduleEntry = function() {
+class ScheduleEntry {
 
-  this.dueTime = 0;
-  this.thisObject = null;
-  this.callback = null;
-  this.arguments = null;
-
-};
-
-Object.defineProperty(ScheduleEntry.prototype, "priority", {
-
-  get: function() {
-    return -dueTime;
-  },
-
-  set: function(value) {
-    throw("Unimplemented");
+  constructor() {
+    this.dueTime = 0;
+    this.thisObject = null;
+    this.callback = null;
+    this.arguments = null;
   }
 
-});
+  get priority() {
+    return -this.dueTime;
+  }
+
+}
 
 /**
  * The process manager manages all time related functionality in the engine.
@@ -73,552 +67,524 @@ Object.defineProperty(ScheduleEntry.prototype, "priority", {
  * display remains smooth.</p>
  */
 
-var TimeManager = function() {
-  this.deferredMethodQueue = [];
-  this._virtualTime = 0;
-  this._interpolationFactor = 0;
-  this.timeScale = 1;
-  this.lastTime = -1;
-  this.elapsed = 0;
-  this.animatedObjects = [];
-  this.tickedObjects = [];
-  this.needPurgeEmpty = false;
-  this._platformTime = 0;
-  this._frameCounter = 0;
-  this.duringAdvance = false;
-  this.thinkHeap = new SimplePriorityQueue(4096);
+export default class TimeManager {
+
+  constructor() {
+    this.deferredMethodQueue = [];
+    this._virtualTime = 0;
+    this._interpolationFactor = 0;
+    this.timeScale = 1;
+    this.lastTime = -1;
+    this.elapsed = 0;
+    this.animatedObjects = [];
+    this.tickedObjects = [];
+    this.needPurgeEmpty = false;
+    this._platformTime = 0;
+    this._frameCounter = 0;
+    this.duringAdvance = false;
+    this.thinkHeap = new SimplePriorityQueue(4096);
+
+    /**
+     * If true, disables warnings about losing ticks.
+     */
+
+    this.disableSlowWarning = true;
+
+    /**
+     * The scale at which time advances. If this is set to 2, the game
+     * will play twice as fast. A value of 0.5 will run the
+     * game at half speed. A value of 1 is normal.
+     */
+
+     this.timeScale = 1;
+  }
+
+  initialize() {
+    if (!this.started) {
+      this.start();
+    }
+  }
+
+  destroy() {
+    if (this.started) {
+      stop();
+    }
+  }
 
   /**
-   * If true, disables warnings about losing ticks.
+   * Starts the process manager. This is automatically called when the first object
+   * is added to the process manager. If the manager is stopped manually, then this
+   * will have to be called to restart it.
    */
 
-  this.disableSlowWarning = true;
-
-  /**
-   * The scale at which time advances. If this is set to 2, the game
-   * will play twice as fast. A value of 0.5 will run the
-   * game at half speed. A value of 1 is normal.
-   */
-
-   this.timeScale = 1;
-};
-
-TimeManager.prototype.constructor = TimeManager;
-
-TimeManager.prototype.initialize = function() {
-  if (!this.started) {
-    this.start();
-  }
-};
-
-TimeManager.prototype.destroy = function() {
-  if (this.started) {
-    stop();
-  }
-};
-
-/**
- * Starts the process manager. This is automatically called when the first object
- * is added to the process manager. If the manager is stopped manually, then this
- * will have to be called to restart it.
- */
-
-TimeManager.prototype.start = function() {
-  if (this.started) {
-      //Logger.warn(this, "start", "The ProcessManager is already started.");
+  start() {
+    if (this.started) {
+      //Logger.warn(this, 'start', 'The ProcessManager is already started.');
       return;
-  }
-
-  this.lastTime = -1.0;
-  this.elapsed = 0.0;
-  this.started = true;
-};
-
-/**
- * Stops the process manager. This is automatically called when the last object
- * is removed from the process manager, but can also be called manually to, for
- * example, pause the game.
- */
-
-TimeManager.prototype.stop = function() {
-  if (!this.started) {
-    //Logger.warn(this, "stop", "The TimeManager isn't started.");
-    return;
-  }
-
-  this.started = false;
-};
-
-
-/**
- * Schedules a function to be called at a specified time in the future.
- *
- * @param delay The number of milliseconds in the future to call the function.
- * @param thisObject The object on which the function should be called. This
- * becomes the 'this' variable in the function.
- * @param callback The function to call.
- * @param arguments The arguments to pass to the function when it is called.
- */
-
-TimeManager.prototype.schedule = function(delay, thisObject, callback) {
-  var args = Array.prototype.slice.call(arguments, 3);
-
-  if (!this.started) {
-    this.start();
-  }
-
-  var schedule = new ScheduleEntry();
-  schedule.dueTime = this._virtualTime + delay;
-  schedule.thisObject = thisObject;
-  schedule.callback = callback;
-  schedule.arguments = args;
-
-  this.thinkHeap.enqueue(schedule);
-};
-
-/**
- * Registers an object to receive frame callbacks.
- *
- * @param object The object to add.
- * @param priority The priority of the object. Objects added with higher priorities
- * will receive their callback before objects with lower priorities. The highest
- * (first-processed) priority is Number.MAX_VALUE. The lowest (last-processed)
- * priority is -Number.MAX_VALUE.
- */
-
-TimeManager.prototype.addAnimatedObject = function(object, priority) {
-  if (priority === undefined) {
-    priority = 0;
-  }
-  this.addObject(object, priority, this.animatedObjects);
-};
-
-/**
- * Registers an object to receive tick callbacks.
- *
- * @param object The object to add.
- * @param priority The priority of the object. Objects added with higher priorities
- * will receive their callback before objects with lower priorities. The highest
- * (first-processed) priority is Number.MAX_VALUE. The lowest (last-processed)
- * priority is -Number.MAX_VALUE.
- */
-
-TimeManager.prototype.addTickedObject = function(object, priority) {
-  if (priority === undefined) {
-    priority = 0;
-  }
-  this.addObject(object, priority, this.tickedObjects);
-};
-
-/**
- * Queue an IQueuedObject for callback. This is a very cheap way to have a callback
- * happen on an object. If an object is queued when it is already in the queue, it
- * is removed, then added.
- */
-
-TimeManager.prototype.queueObject = function(object) {
-  // Assert if this is in the past.
-  if (object.nextThinkTime < this._virtualTime) {
-    throw new Error("Tried to queue something into the past, but no flux capacitor is present!");
-  }
-
-  if (this.thinkHeap.contains(object)) {
-    this.thinkHeap.remove(object);
-  }
-
-  if (!this.thinkHeap.enqueue(object)) {
-    //Logger.print(this, "Thinking queue length maxed out!");
-  }
-};
-
-/**
- * Remove an IQueuedObject for consideration for callback. No error results if it
- * was not in the queue.
- */
-
-TimeManager.prototype.dequeueObject = function(object) {
-  if(this.thinkHeap.contains(object)) {
-    this.thinkHeap.remove(object);
-  }
-};
-
-/**
- * Unregisters an object from receiving frame callbacks.
- *
- * @param object The object to remove.
- */
-
-TimeManager.prototype.removeAnimatedObject = function(object) {
-  this.removeObject(object, this.animatedObjects);
-};
-
-/**
- * Unregisters an object from receiving tick callbacks.
- *
- * @param object The object to remove.
- */
-
-TimeManager.prototype.removeTickedObject = function(object) {
-  this.removeObject(object, this.tickedObjects);
-};
-
-/**
- * Deferred function callback - called back at start of processing for next frame. Useful
- * any time you are going to do setTimeout(someFunc, 1) - it's a lot cheaper to do it
- * this way.
- * @param method Function to call.
- * @param args Any arguments.
- */
-
-TimeManager.prototype.callLater = function(context, method) {
-  var args = Array.prototype.slice.call(arguments, 2);
-  var dm = {
-    context: context,
-    method: method,
-    args: args
-  };
-  this.deferredMethodQueue.push(dm);
-};
-
-
-/**
- * Internal function add an object to a list with a given priority.
- * @param object Object to add.
- * @param priority Priority; this is used to keep the list ordered.
- * @param list List to add to.
- */
-
-TimeManager.prototype.addObject = function(object, priority, list) {
-  // If we are in a tick, defer the add.
-  if (this.duringAdvance) {
-    this.callLater(this, this.addObject, object, priority, list);
-    return;
-  }
-
-  if (!this.started) {
-    this.start();
-  }
-
-  var position = -1;
-  for (var i = 0; i < list.length; i++) {
-    if(!list[i]) {
-      continue;
     }
 
-    if (list[i].listener === object) {
-        //Logger.warn(object, "AddProcessObject", "This object has already been added to the process manager.");
+    this.lastTime = -1.0;
+    this.elapsed = 0.0;
+    this.started = true;
+  }
+
+  /**
+   * Stops the process manager. This is automatically called when the last object
+   * is removed from the process manager, but can also be called manually to, for
+   * example, pause the game.
+   */
+
+  stop() {
+    if (!this.started) {
+      //Logger.warn(this, 'stop', 'The TimeManager isn't started.');
+      return;
+    }
+
+    this.started = false;
+  }
+
+
+  /**
+   * Schedules a function to be called at a specified time in the future.
+   *
+   * @param delay The number of milliseconds in the future to call the function.
+   * @param thisObject The object on which the function should be called. This
+   * becomes the 'this' variable in the function.
+   * @param callback The function to call.
+   * @param arguments The arguments to pass to the function when it is called.
+   */
+
+  schedule(delay, thisObject, callback) {
+    var argCount = arguments.length;
+    var args = [];
+
+    for (var i = 3; i < argCount; i++) {
+      args[i - 3] = arguments[i];
+    }
+
+    if (!this.started) {
+      this.start();
+    }
+
+    var schedule = new ScheduleEntry();
+    schedule.dueTime = this._virtualTime + delay;
+    schedule.thisObject = thisObject;
+    schedule.callback = callback;
+    schedule.arguments = args;
+
+    this.thinkHeap.enqueue(schedule);
+  }
+
+  /**
+   * Registers an object to receive frame callbacks.
+   *
+   * @param object The object to add.
+   * @param priority The priority of the object. Objects added with higher priorities
+   * will receive their callback before objects with lower priorities. The highest
+   * (first-processed) priority is Number.MAX_VALUE. The lowest (last-processed)
+   * priority is -Number.MAX_VALUE.
+   */
+
+  addAnimatedObject(object, priority = 0) {
+    this.addObject(object, priority, this.animatedObjects);
+  }
+
+  /**
+   * Registers an object to receive tick callbacks.
+   *
+   * @param object The object to add.
+   * @param priority The priority of the object. Objects added with higher priorities
+   * will receive their callback before objects with lower priorities. The highest
+   * (first-processed) priority is Number.MAX_VALUE. The lowest (last-processed)
+   * priority is -Number.MAX_VALUE.
+   */
+
+  addTickedObject(object, priority = 0) {
+    this.addObject(object, priority, this.tickedObjects);
+  }
+
+  /**
+   * Queue an IQueuedObject for callback. This is a very cheap way to have a callback
+   * happen on an object. If an object is queued when it is already in the queue, it
+   * is removed, then added.
+   */
+
+  queueObject(object) {
+    // Assert if this is in the past.
+    if (object.nextThinkTime < this._virtualTime) {
+      throw new Error('Tried to queue something into the past, but no flux capacitor is present!');
+    }
+
+    if (this.thinkHeap.contains(object)) {
+      this.thinkHeap.remove(object);
+    }
+
+    if (!this.thinkHeap.enqueue(object)) {
+      //Logger.print(this, 'Thinking queue length maxed out!');
+    }
+  }
+
+  /**
+   * Remove an IQueuedObject for consideration for callback. No error results if it
+   * was not in the queue.
+   */
+
+  dequeueObject(object) {
+    if(this.thinkHeap.contains(object)) {
+      this.thinkHeap.remove(object);
+    }
+  }
+
+  /**
+   * Unregisters an object from receiving frame callbacks.
+   *
+   * @param object The object to remove.
+   */
+
+  removeAnimatedObject(object) {
+    this.removeObject(object, this.animatedObjects);
+  }
+
+  /**
+   * Unregisters an object from receiving tick callbacks.
+   *
+   * @param object The object to remove.
+   */
+
+  removeTickedObject(object) {
+    this.removeObject(object, this.tickedObjects);
+  }
+
+  /**
+   * Deferred function callback - called back at start of processing for next frame. Useful
+   * any time you are going to do setTimeout(someFunc, 1) - it's a lot cheaper to do it
+   * this way.
+   * @param method Function to call.
+   * @param args Any arguments.
+   */
+
+  callLater(context, method) {
+    var argCount = arguments.length;
+    var args = [];
+
+    for (var i = 2; i < argCount; i++) {
+      args[i - 2] = arguments[i];
+    }
+
+    var dm = {
+      context: context,
+      method: method,
+      args: args
+    }
+    this.deferredMethodQueue.push(dm);
+  }
+
+
+  /**
+   * Internal function add an object to a list with a given priority.
+   * @param object Object to add.
+   * @param priority Priority; this is used to keep the list ordered.
+   * @param list List to add to.
+   */
+
+  addObject(object, priority, list) {
+    // If we are in a tick, defer the add.
+    if (this.duringAdvance) {
+      this.callLater(this, this.addObject, object, priority, list);
+      return;
+    }
+
+    if (!this.started) {
+      this.start();
+    }
+
+    var position = -1;
+    for (var i = 0, len = list.length; i < len; i++) {
+      if (!list[i]) {
+        continue;
+      }
+
+      if (list[i].listener === object) {
+        //Logger.warn(object, 'AddProcessObject', 'This object has already been added to the process manager.');
         return;
-    }
+      }
 
-    if (list[i].priority < priority) {
+      if (list[i].priority < priority) {
         position = i;
         break;
+      }
+    }
+
+    var processObject = {
+      listener: object,
+      priority: priority
+    }
+
+    if (position < 0 || position >= list.length) {
+      list.push(processObject);
+    } else {
+      list.splice(position, 0, processObject);
     }
   }
 
-  var processObject = {
-    listener: object,
-    priority: priority
-  };
+  /**
+   * Peer to addObject; removes an object from a list.
+   * @param object Object to remove.
+   * @param list List from which to remove.
+   */
 
-  if (position < 0 || position >= list.length) {
-    list.push(processObject);
-  } else {
-    list.splice(position, 0, processObject);
-  }
-};
-
-/**
- * Peer to addObject; removes an object from a list.
- * @param object Object to remove.
- * @param list List from which to remove.
- */
-
-TimeManager.prototype.removeObject = function(object, list) {
-  if (this.listenerCount == 1 && this.thinkHeap.size === 0) {
-    this.stop();
-  }
-
-  for (var i = 0; i < list.length; i++) {
-    if(!list[i]) {
-      continue;
+  removeObject(object, list) {
+    if (this.listenerCount == 1 && this.thinkHeap.size === 0) {
+      this.stop();
     }
 
-    if (list[i].listener === object) {
-      if (this.duringAdvance) {
+    for (var i = 0, len = list.length; i < len; i++) {
+      if (!list[i]) {
+        continue;
+      }
+
+      if (list[i].listener === object) {
+        if (this.duringAdvance) {
           list[i] = null;
           this.needPurgeEmpty = true;
-      } else {
+        } else {
           list.splice(i, 1);
-      }
+        }
 
+        return;
+      }
+    }
+
+    //Logger.warn(object, 'RemoveProcessObject', 'This object has not been added to the process manager.');
+  }
+
+  /**
+   * Main callback; this is called every frame and allows game logic to run.
+   */
+
+  update() {
+
+    if (!this.started) {
       return;
     }
-  }
 
-  //Logger.warn(object, "RemoveProcessObject", "This object has not been added to the process manager.");
-};
+    // Track current time.
+    var currentTime = Date.now();
+    if (this.lastTime < 0) {
+      this.lastTime = currentTime;
+      return;
+    }
 
-/**
- * Main callback; this is called every frame and allows game logic to run.
- */
+    // Bump the frame counter.
+    this._frameCounter++;
 
-TimeManager.prototype.update = function() {
+    // Calculate time since last frame and advance that much.
+    var deltaTime = (currentTime - this.lastTime) * this.timeScale;
+    this.advance(deltaTime);
 
-  if (!this.started) {
-    return;
-  }
-
-  // Track current time.
-  var currentTime = Date.now();
-  if (this.lastTime < 0) {
+    // Note new last time.
     this.lastTime = currentTime;
-    return;
   }
 
-  // Bump the frame counter.
-  this._frameCounter++;
-
-  // Calculate time since last frame and advance that much.
-  var deltaTime = (currentTime - this.lastTime) * this.timeScale;
-  this.advance(deltaTime);
-
-  // Note new last time.
-  this.lastTime = currentTime;
-};
-
-TimeManager.prototype.advance = function(deltaTime, suppressSafety) {
-  if (suppressSafety === undefined) {
-    suppressSafety = false;
-  }
-
-  // Update platform time, to avoid lots of costly calls to Date.now().
-  this._platformTime = Date.now();
-
-  // Note virtual time we started advancing from.
-  var startTime = this._virtualTime;
-
-  // Add time to the accumulator.
-  this.elapsed += deltaTime;
-
-  // Perform ticks, respecting tick caps.
-  var tickCount = 0;
-  while (this.elapsed >= TICK_RATE_MS && (suppressSafety || tickCount < MAX_TICKS_PER_FRAME)) {
-    this.fireTick();
-    this.tickCount++;
-  }
-
-  // Safety net - don't do more than a few ticks per frame to avoid death spirals.
-  if (this.tickCount >= MAX_TICKS_PER_FRAME && !suppressSafety && !disableSlowWarning)
-  {
-      // By default, only show when profiling.
-      //Logger.warn(this, "advance", "Exceeded maximum number of ticks for frame (" + elapsed.toFixed() + "ms dropped) .");
-  }
-
-  // Make sure that we don't fall behind too far. This helps correct
-  // for short-term drops in framerate as well as the scenario where
-  // we are consistently running behind.
-  this.elapsed = this.clamp(this.elapsed, 0, 300);
-
-  // Make sure we don't lose time to accumulation error.
-  // Not sure this gains us anything, so disabling -- BJG
-  //_virtualTime = startTime + deltaTime;
-
-  // We process scheduled items again after tick processing to ensure between-tick schedules are hit
-  // Commenting this out because it can cause too-often calling of callLater methods. -- BJG
-  // processScheduledObjects();
-
-  // Update objects wanting OnFrame callbacks.
-  this.duringAdvance = true;
-  this._interpolationFactor = this.elapsed / TICK_RATE_MS;
-
-  var animDT = deltaTime * 0.001;
-
-  for(var i = 0; i < this.animatedObjects.length; i++) {
-    var animatedObject = this.animatedObjects[i];
-    if (animatedObject) {
-      animatedObject.listener.onFrame(animDT);
+  advance(deltaTime, suppressSafety) {
+    if (suppressSafety === undefined) {
+      suppressSafety = false;
     }
-  }
 
-  this.duringAdvance = false;
+    // Update platform time, to avoid lots of costly calls to Date.now().
+    this._platformTime = Date.now();
 
-  // Purge the lists if needed.
-  if (this.needPurgeEmpty) {
-    this.needPurgeEmpty = false;
+    // Note virtual time we started advancing from.
+    var startTime = this._virtualTime;
 
-    for (var j = 0; j < this.animatedObjects.length; j++) {
-      if (this.animatedObjects[j]) {
-        continue;
+    // Add time to the accumulator.
+    this.elapsed += deltaTime;
+
+    // Perform ticks, respecting tick caps.
+    var tickCount = 0;
+    while (this.elapsed >= TICK_RATE_MS && (suppressSafety || tickCount < MAX_TICKS_PER_FRAME)) {
+      this.fireTick();
+      this.tickCount++;
+    }
+
+    // Safety net - don't do more than a few ticks per frame to avoid death spirals.
+    if (this.tickCount >= MAX_TICKS_PER_FRAME && !suppressSafety && !disableSlowWarning)
+    {
+        // By default, only show when profiling.
+        //Logger.warn(this, 'advance', 'Exceeded maximum number of ticks for frame (' + elapsed.toFixed() + 'ms dropped) .');
+    }
+
+    // Make sure that we don't fall behind too far. This helps correct
+    // for short-term drops in framerate as well as the scenario where
+    // we are consistently running behind.
+    this.elapsed = this.clamp(this.elapsed, 0, 300);
+
+    // Make sure we don't lose time to accumulation error.
+    // Not sure this gains us anything, so disabling -- BJG
+    //_virtualTime = startTime + deltaTime;
+
+    // We process scheduled items again after tick processing to ensure between-tick schedules are hit
+    // Commenting this out because it can cause too-often calling of callLater methods. -- BJG
+    // processScheduledObjects();
+
+    // Update objects wanting OnFrame callbacks.
+    this.duringAdvance = true;
+    this._interpolationFactor = this.elapsed / TICK_RATE_MS;
+
+    var animDT = deltaTime * 0.001;
+
+    for(var i = 0; i < this.animatedObjects.length; i++) {
+      var animatedObject = this.animatedObjects[i];
+      if (animatedObject) {
+        animatedObject.listener.onFrame(animDT);
       }
-
-      this.animatedObjects.splice(j, 1);
-      j--;
     }
 
-    for (var k = 0; k < this.tickedObjects.length; k++) {
-      if (this.tickedObjects[k]) {
-        continue;
-      }
+    this.duringAdvance = false;
 
-      this.tickedObjects.splice(k, 1);
-      k--;
-    }
-  }
-};
+    // Purge the lists if needed.
+    if (this.needPurgeEmpty) {
+      this.needPurgeEmpty = false;
 
-TimeManager.prototype.fireTick = function() {
-  // Ticks always happen on interpolation boundary.
-  this._interpolationFactor = 0.0;
-
-  // Process pending events at this tick.
-  // This is done in the loop to ensure the correct order of events.
-  this.processScheduledObjects();
-
-  // Do the onTick callbacks
-  duringAdvance = true;
-  for (var j = 0; j < this.tickedObjects.length; j++) {
-    var object = this.tickedObjects[j];
-    if(!object) {
-      continue;
-    }
-    object.listener.onTick(TICK_RATE);
-  }
-  this.duringAdvance = false;
-
-  // Update virtual time by subtracting from accumulator.
-  this._virtualTime += TICK_RATE_MS;
-  this.elapsed -= TICK_RATE_MS;
-};
-
-TimeManager.prototype.processScheduledObjects = function() {
-  // Do any deferred methods.
-  var oldDeferredMethodQueue = this.deferredMethodQueue;
-  if (oldDeferredMethodQueue.length > 0)
-  {
-    // Put a new array in the queue to avoid getting into corrupted
-    // state due to more calls being added.
-    this.deferredMethodQueue = [];
-
-    for (var j = 0; j < oldDeferredMethodQueue.length; j++) {
-      var curDM = oldDeferredMethodQueue[j];
-      curDM.method.apply(curDM.context, curDM.args);
-    }
-
-    // Wipe the old array now we're done with it.
-    oldDeferredMethodQueue.length = 0;
-  }
-
-  // Process any queued items.
-  if (this.thinkHeap.size > 0) {
-    while(this.thinkHeap.size > 0 && this.thinkHeap.front.priority >= -this._virtualTime) {
-      var itemRaw = this.thinkHeap.dequeue();
-
-      if (itemRaw.nextThinkTime) {
-        // Check here to avoid else block that throws an error - empty callback
-        // means it unregistered.
-        if (itemRaw.nextThinkCallback) {
-          itemRaw.nextThinkCallback.call(itemRaw.nextThinkContext);
+      for (var j = 0; j < this.animatedObjects.length; j++) {
+        if (this.animatedObjects[j]) {
+          continue;
         }
-      } else if (itemRaw.callback) {
-        itemRaw.callback.apply(itemRaw.thisObject, itemRaw.arguments);
-      } else {
-        throw "Unknown type found in thinkHeap.";
+
+        this.animatedObjects.splice(j, 1);
+        j--;
+      }
+
+      for (var k = 0; k < this.tickedObjects.length; k++) {
+        if (this.tickedObjects[k]) {
+          continue;
+        }
+
+        this.tickedObjects.splice(k, 1);
+        k--;
       }
     }
   }
-};
 
-TimeManager.prototype.clamp = function(v, min, max) {
-  min = min || 0;
-  max = max || 0;
-  if (v < min) return min;
-  if (v > max) return max;
-  return v;
-};
+  fireTick() {
+    // Ticks always happen on interpolation boundary.
+    this._interpolationFactor = 0.0;
 
-/**
- * Returns true if the process manager is advancing.
- */
+    // Process pending events at this tick.
+    // This is done in the loop to ensure the correct order of events.
+    this.processScheduledObjects();
 
-Object.defineProperty(TimeManager.prototype, "isTicking", {
+    // Do the onTick callbacks
+    duringAdvance = true;
+    for (var j = 0; j < this.tickedObjects.length; j++) {
+      var object = this.tickedObjects[j];
+      if(!object) {
+        continue;
+      }
+      object.listener.onTick(TICK_RATE);
+    }
+    this.duringAdvance = false;
 
-  get: function() {
+    // Update virtual time by subtracting from accumulator.
+    this._virtualTime += TICK_RATE_MS;
+    this.elapsed -= TICK_RATE_MS;
+  }
+
+  processScheduledObjects() {
+    // Do any deferred methods.
+    var oldDeferredMethodQueue = this.deferredMethodQueue;
+    if (oldDeferredMethodQueue.length > 0)
+    {
+      // Put a new array in the queue to avoid getting into corrupted
+      // state due to more calls being added.
+      this.deferredMethodQueue = [];
+
+      for (var j = 0; j < oldDeferredMethodQueue.length; j++) {
+        var curDM = oldDeferredMethodQueue[j];
+        curDM.method.apply(curDM.context, curDM.args);
+      }
+
+      // Wipe the old array now we're done with it.
+      oldDeferredMethodQueue.length = 0;
+    }
+
+    // Process any queued items.
+    if (this.thinkHeap.size > 0) {
+      while(this.thinkHeap.size > 0 && this.thinkHeap.front.priority >= -this._virtualTime) {
+        var itemRaw = this.thinkHeap.dequeue();
+
+        if (itemRaw.nextThinkTime) {
+          // Check here to avoid else block that throws an error - empty callback
+          // means it unregistered.
+          if (itemRaw.nextThinkCallback) {
+            itemRaw.nextThinkCallback.call(itemRaw.nextThinkContext);
+          }
+        } else if (itemRaw.callback) {
+          itemRaw.callback.apply(itemRaw.thisObject, itemRaw.arguments);
+        } else {
+          throw 'Unknown type found in thinkHeap.';
+        }
+      }
+    }
+  }
+
+  clamp(v, min = 0, max = 0) {
+    if (v < min) return min;
+    if (v > max) return max;
+    return v;
+  }
+
+  /**
+   * Returns true if the process manager is advancing.
+   */
+  get isTicking() {
     return this.started;
   }
 
-});
-
-/**
- * Used to determine how far we are between ticks. 0.0 at the start of a tick, and
- * 1.0 at the end. Useful for smoothly interpolating visual elements.
- */
-
-Object.defineProperty(TimeManager.prototype, "interpolationFactor", {
-
-  get: function() {
+  /**
+   * Used to determine how far we are between ticks. 0.0 at the start of a tick, and
+   * 1.0 at the end. Useful for smoothly interpolating visual elements.
+   */
+  get interpolationFactor() {
     return this._interpolationFactor;
   }
 
-});
+  /**
+   * The amount of time that has been processed by the process manager. This does
+   * take the time scale into account. Time is in milliseconds.
+   */
 
-/**
- * The amount of time that has been processed by the process manager. This does
- * take the time scale into account. Time is in milliseconds.
- */
-
-Object.defineProperty(TimeManager.prototype, "virtualTime", {
-
-  get: function() {
+  get virtualTime() {
     return this._virtualTime;
   }
 
-});
+  /**
+   * Current time reported by getTimer(), updated every frame. Use this to avoid
+   * costly calls to getTimer(), or if you want a unique number representing the
+   * current frame.
+   */
 
-/**
- * Current time reported by getTimer(), updated every frame. Use this to avoid
- * costly calls to getTimer(), or if you want a unique number representing the
- * current frame.
- */
 
-Object.defineProperty(TimeManager.prototype, "platformTime", {
-
-  get: function() {
+  get platformTime() {
     return this._platformTime;
   }
 
-});
-
-/**
- * Integer identifying this frame. Incremented by one for every frame.
- */
-
-Object.defineProperty(TimeManager.prototype, "frameCounter", {
-
-  get: function() {
+  /**
+   * Integer identifying this frame. Incremented by one for every frame.
+   */
+  get frameCounter() {
     return this._frameCounter;
   }
 
-});
-
-Object.defineProperty(TimeManager.prototype, "msPerTick", {
-
-  get: function() {
+  get msPerTick() {
     return TICK_RATE_MS;
   }
 
-});
-
-/**
- * @return How many objects are depending on the TimeManager right now?
- */
-
-Object.defineProperty(TimeManager.prototype, "listenerCount", {
-
-  get: function() {
+  /**
+   * @return How many objects are depending on the TimeManager right now?
+   */
+  get listenerCount() {
     return this.tickedObjects.length + this.animatedObjects.length;
   }
 
-});
-
-module.exports = TimeManager;
+}

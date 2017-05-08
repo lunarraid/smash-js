@@ -1,74 +1,64 @@
-var GameComponent = require("../core/GameComponent.js");
-var TimeManager = require("./TimeManager.js");
+import GameComponent from '../core/GameComponent';
+import TimeManager from './TimeManager';
 
 /**
  * Base class for components that need to perform actions every tick. This
  * needs to be subclassed to be useful.
  */
 
-var TickedComponent = function() {
-  GameComponent.call(this);
+export default class TickedComponent extends GameComponent {
 
-  // The update priority for this component. Higher numbered priorities have
-  // onInterpolateTick and onTick called before lower priorities.
-  this.updatePriority = 0;
+  var TickedComponent() {
+    super();
 
-  this._registerForUpdates = true;
-  this._isRegisteredForUpdates = false;
-};
+    // The update priority for this component. Higher numbered priorities have
+    // onInterpolateTick and onTick called before lower priorities.
+    this.updatePriority = 0;
 
-TickedComponent.prototype = Object.create(GameComponent.prototype);
+    this._registerForTicks = true;
+    this._isRegisteredForTicks = false;
+  }
 
-TickedComponent.prototype.constructor = TickedComponent;
+  onTick(tickRate) {
+    this.applyBindings();
+  }
 
-TickedComponent.prototype.onTick = function(tickRate) {
-  this.applyBindings();
-};
+  onAdd() {
+    super.onAdd();
+    this.timeManager = this.owner.getManager(TimeManager);
+    // This causes the component to be registerd if it isn't already.
+    this.registerForTicks = this.registerForTicks;
+  }
 
-TickedComponent.prototype.onAdd = function() {
-  GameComponent.prototype.onAdd.call(this);
-  this.timeManager = this.owner.getManager(TimeManager);
-  // This causes the component to be registerd if it isn't already.
-  this.registerForTicks = this.registerForTicks;
-};
+  onRemove() {
+    // Make sure we are unregistered.
+    this.registerTicks = false;
+    super.onRemove();
+  }
 
-TickedComponent.prototype.onRemove = function() {
-  // Make sure we are unregistered.
-  this.registerTicks = false;
-  GameComponent.prototype.onRemove.call(this);
-};
-
-/**
- * Set to register/unregister for tick updates.
- */
-
-Object.defineProperty(TickedComponent.prototype, "registerForTicks", {
-
-  get: function() {
-    return this._registerForUpdates;
+  /**
+   * Set to register/unregister for tick updates.
+   */
+  get registerForTicks() {
+    return this._registerForTicks;
   },
 
-  set: function(value) {
-    this._registerForUpdates = value;
+  set registerForTicks(value) {
+    this._registerForTicks = value;
 
     if (!this.timeManager) {
       return;
     }
 
-    if (this._registerForUpdates && !this._isRegisteredForUpdates)
-    {
+    if (this._registerForTicks && !this._isRegisteredForTicks) {
       // Need to register.
-      this._isRegisteredForUpdates = true;
+      this._isRegisteredForTicks = true;
       this.timeManager.addTickedObject(this, this.updatePriority);
-    }
-    else if(!this._registerForUpdates && this._isRegisteredForUpdates)
-    {
+    } else if (!this._registerForTicks && this._isRegisteredForTicks) {
       // Need to unregister.
-      this._isRegisteredForUpdates = false;
+      this._isRegisteredForTicks = false;
       this.timeManager.removeTickedObject(this);
     }
   }
 
-});
-
-module.exports = TickedComponent;
+}

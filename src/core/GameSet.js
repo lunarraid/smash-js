@@ -1,4 +1,4 @@
-var BaseObject = require("./BaseObject.js");
+import BaseObject from './BaseObject';
 
 /**
  * GameSet provides safe references to one or more GameObjects. When the
@@ -6,64 +6,57 @@ var BaseObject = require("./BaseObject.js");
  * from any GameSets.
  */
 
-var GameSet = function() {
-  BaseObject.call(this);
-  this.items = [];
-};
+export default class GameSet extends BaseObject {
 
-GameSet.prototype = Object.create(BaseObject.prototype);
-
-GameSet.prototype.constructor = GameSet;
-
-/**
- * Add a GameObject to the set.
- */
-
-GameSet.prototype.add = function(object) {
-  this.items.push(object);
-  object.noteSetAdd(this);
-};
-
-/**
- * Remove a GameObject from the set.
- */
-
-GameSet.prototype.remove = function(object) {
-  var idx = this.items.indexOf(object);
-  if (idx === -1) {
-    throw "Requested GameObject is not in this GameSet.";
+  constructor() {
+    super();
+    this.items = [];
   }
-  this.items.splice(idx, 1);
-  object.noteSetRemove(this);
-};
 
-/**
- * Does this GameSet contain the specified object?
- */
+  /**
+   * Add a GameObject to the set.
+   */
 
-GameSet.prototype.contains = function(object) {
-  return this.items.indexOf(object) !== -1;
-};
+  add(object) {
+    this.items.push(object);
+    object.noteSetAdd(this);
+  }
 
-/**
- * Return the object at the specified index of the set.
- */
+  /**
+   * Remove a GameObject from the set.
+   */
 
-GameSet.prototype.getGameObjectAt = function(index) {
-  return this.items[index];
-};
+  remove(object) {
+    var idx = this.items.indexOf(object);
+    if (idx === -1) {
+      throw "Requested GameObject is not in this GameSet.";
+    }
+    this.items.splice(idx, 1);
+    object.noteSetRemove(this);
+  }
 
+  /**
+   * Does this GameSet contain the specified object?
+   */
 
-/**
- * How many objects are in the set?
- */
+  contains(object) {
+    return this.items.indexOf(object) !== -1;
+  }
 
-Object.defineProperty(GameSet.prototype, "length", {
+  /**
+   * Return the object at the specified index of the set.
+   */
 
-  get: function() {
+  getGameObjectAt(index) {
+    return this.items[index];
+  }
+
+  /**
+   * How many objects are in the set?
+   */
+
+  get length() {
     return this.items.length;
   }
 
-});
-
-module.exports = GameSet;
+}

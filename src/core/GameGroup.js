@@ -1,5 +1,5 @@
-var BaseObject = require("./BaseObject.js");
-var SmashMap = require("../util/SmashMap.js");
+import BaseObject from './BaseObject';
+import SmashMap from '../util/SmashMap';
 
 /**
  * GameGroup provides lifecycle functionality (GameObjects in it are destroy()ed
@@ -9,126 +9,120 @@ var SmashMap = require("../util/SmashMap.js");
  * be initialize()ed.
  */
 
-var GameGroup = function() {
-  BaseObject.call(this);
-  this._items = [];
-  this._managers = new SmashMap();
-};
+export default class GameGroup extends BaseObject {
 
-GameGroup.prototype = Object.create(BaseObject.prototype);
-
-GameGroup.prototype.constructor = GameGroup;
-
-/**
- * Does this GameGroup directly contain the specified object?
- */
-
-GameGroup.prototype.contains = function(object) {
-  return (object.owningGroup === this);
-};
-
-GameGroup.prototype.getGameObjectAt = function(index) {
-  return this._items[index];
-};
-
-GameGroup.prototype.initialize = function() {
-  // Groups can stand alone so don't do the _owningGroup check in the parent class.
-  // If no owning group, add to the global list for debug purposes.
-  //if (this.owningGroup === null) {
-    // todo add root group error
-    // owningGroup = Game._rootGroup;
-  //}
-};
-
-GameGroup.prototype.destroy = function() {
-  BaseObject.prototype.destroy.call(this);
-
-  // Wipe the items.
-  while (this.length) {
-    this.getGameObjectAt(this.length-1).destroy();
+  constructor() {
+    super();
+    this._items = [];
+    this._managers = new SmashMap();
   }
 
-  for (var i = this._managers.length - 1; i >= 0; i--) {
-    var key = this._managers.getKeyAt(i);
-    var value = this._managers.getValueAt(i);
-    if (value && value.destroy) { value.destroy(); }
-    this._managers.remove(key);
+  /**
+   * Does this GameGroup directly contain the specified object?
+   */
+
+  contains(object) {
+    return (object.owningGroup === this);
   }
-};
 
-GameGroup.prototype.noteRemove = function(object) {
-  // Get it out of the list.
-  var idx = this._items.indexOf(object);
-  if (idx == -1) {
-    throw new Error("Can't find GameObject in GameGroup! Inconsistent group membership!");
+  getGameObjectAt(index) {
+    return this._items[index];
   }
-  this._items.splice(idx, 1);
-};
 
-GameGroup.prototype.noteAdd = function(object) {
-  this._items.push(object);
-};
-
-/**
- * Add a manager, which is used to fulfill dependencies for the specified
- * name. If the "manager" implements has an initialize() method, then
- * initialize() is called at this time. When the GameGroup's destroy()
- * method is called, then destroy() is called on the manager if it
- * has this method.
- */
-
-GameGroup.prototype.registerManager = function(clazz, instance) {
-  this._managers.put(clazz, instance);
-  instance.owningGroup = this;
-  if (instance.initialize) {
-    instance.initialize();
+  initialize() {
+    // Groups can stand alone so don't do the _owningGroup check in the parent class.
+    // If no owning group, add to the global list for debug purposes.
+    //if (this.owningGroup === null) {
+      // todo add root group error
+      // owningGroup = Game._rootGroup;
+    //}
   }
-  return instance;
-};
 
-/**
- * Get a previously registered manager.
- */
+  destroy() {
+    super.destroy();
 
-GameGroup.prototype.getManager = function(clazz) {
-  var res = this._managers.get(clazz);
-  if (!res) {
-    if (this.owningGroup) {
-      return this.owningGroup.getManager(clazz);
-    } else {
-      throw new Error("Can't find manager " + clazz + "!");
+    // Wipe the items.
+    while (this.length) {
+      this.getGameObjectAt(this.length - 1).destroy();
     }
-  }
-  return res;
-};
 
-/**
- * Return the GameObject at the specified index.
- */
-
-GameGroup.prototype.lookup = function(name) {
-  for (var i = 0; i < this._items.length; i++) {
-    if (this._items[i].name === name) {
-      return this._items[i];
+    for (var i = this._managers.length - 1; i >= 0; i--) {
+      var key = this._managers.getKeyAt(i);
+      var value = this._managers.getValueAt(i);
+      if (value && value.destroy) { value.destroy(); }
+      this._managers.remove(key);
     }
   }
 
-  //Logger.error(GameGroup, "lookup", "lookup failed! GameObject by the name of " + name + " does not exist");
+  noteRemove(object) {
+    // Get it out of the list.
+    var idx = this._items.indexOf(object);
+    if (idx === -1) {
+      throw new Error('Can\'t find GameObject in GameGroup! Inconsistent group membership!');
+    }
+    this._items.splice(idx, 1);
+  }
 
-  return null;
-};
+  noteAdd(object) {
+    this._items.push(object);
+  }
+
+  /**
+   * Add a manager, which is used to fulfill dependencies for the specified
+   * name. If the 'manager' implements has an initialize() method, then
+   * initialize() is called at this time. When the GameGroup's destroy()
+   * method is called, then destroy() is called on the manager if it
+   * has this method.
+   */
+
+  registerManager(clazz, instance) {
+    this._managers.put(clazz, instance);
+    instance.owningGroup = this;
+    if (instance.initialize) {
+      instance.initialize();
+    }
+    return instance;
+  }
+
+  /**
+   * Get a previously registered manager.
+   */
+
+  getManager(clazz) {
+    var res = this._managers.get(clazz);
+    if (!res) {
+      if (this.owningGroup) {
+        return this.owningGroup.getManager(clazz);
+      } else {
+        throw new Error('Can\'t find manager ' + clazz + '!');
+      }
+    }
+    return res;
+  }
+
+  /**
+   * Return the GameObject at the specified index.
+   */
+
+  lookup(name) {
+    for (var i = 0, len = this._items.length; i < len; i++) {
+      if (this._items[i].name === name) {
+        return this._items[i];
+      }
+    }
+
+    //Logger.error(GameGroup, 'lookup', 'lookup failed! GameObject by the name of ' + name + ' does not exist');
+
+    return null;
+  }
 
 
-/**
- * How many GameObjects are in this group?
- */
+  /**
+   * How many GameObjects are in this group?
+   */
 
-Object.defineProperty(GameGroup.prototype, "length", {
-
-  get: function() {
+  get length() {
     return this._items.length;
   }
 
-});
-
-module.exports = GameGroup;
+}

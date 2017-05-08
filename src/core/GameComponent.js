@@ -1,4 +1,4 @@
-var PropertyManager = require("../property/PropertyManager.js");
+import PropertyManager from '../property/PropertyManager';
 
 /**
  * Base class for most game functionality. Contained in a GameObject.
@@ -7,122 +7,115 @@ var PropertyManager = require("../property/PropertyManager.js");
  * the component is added to or removed from a GameObject.
  */
 
-var GameComponent = function() {
-  this.bindings = [];
-  this._safetyFlag = false;
-  this._name = "";
-  this._owner = null;
-};
+export default class GameComponent {
 
-GameComponent.prototype.isGameComponent = true;
-
-/**
- * Components include a powerful data binding system. You can set up
- * rules indicating fields to load from other parts of the game, then
- * apply the data bindings using the applyBindings() method. If you don't
- * use them, bindings have no overhead.
- *
- * @param fieldName Name of a field on this object to copy data to.
- * @param propertyReference A reference to a value on another component,
- *                          GameObject, or other part of the system.
- *                          Usually "@componentName.fieldName".
- */
-
-GameComponent.prototype.addBinding = function(fieldName, propertyReference) {
-  this.bindings.push(fieldName + "||" + propertyReference);
-};
-
-/**
- * Remove a binding previously added with addBinding. Call with identical
- * parameters.
- */
-
-GameComponent.prototype.removeBinding = function(fieldName, propertyReference) {
-  var binding = fieldName + "||" + propertyReference;
-  var idx = this.bindings.indexOf(binding);
-  if (idx === -1) {
-    return;
-  }
-  this.bindings.splice(idx, 1);
-};
-
-/**
- * Loop through bindings added with addBinding and apply them. Typically
- * called at start of onTick or onFrame handler.
- */
-
-GameComponent.prototype.applyBindings = function() {
-  if (!this.propertyManager) {
-    throw new Error("Couldn't find a PropertyManager instance");
+  constructor() {
+    this.bindings = [];
+    this._safetyFlag = false;
+    this._name = '';
+    this._owner = null;
   }
 
-  for (var i = 0; i < this.bindings.length; i++) {
-    this.propertyManager.applyBinding(this, this.bindings[i]);
+
+  /**
+   * Components include a powerful data binding system. You can set up
+   * rules indicating fields to load from other parts of the game, then
+   * apply the data bindings using the applyBindings() method. If you don't
+   * use them, bindings have no overhead.
+   *
+   * @param fieldName Name of a field on this object to copy data to.
+   * @param propertyReference A reference to a value on another component,
+   *                          GameObject, or other part of the system.
+   *                          Usually '@componentName.fieldName'.
+   */
+
+  addBinding(fieldName, propertyReference) {
+    this.bindings.push(fieldName + '||' + propertyReference);
   }
-};
 
-GameComponent.prototype.doAdd = function() {
-  this.propertyManager = this.owner.getManager(PropertyManager);
-  this._safetyFlag = false;
-  this.onAdd();
-  if (this._safetyFlag === false) {
-    throw new Error("You forget to call onAdd() on supr in an onAdd override.");
+  /**
+   * Remove a binding previously added with addBinding. Call with identical
+   * parameters.
+   */
+
+  removeBinding(fieldName, propertyReference) {
+    var binding = fieldName + '||' + propertyReference;
+    var idx = this.bindings.indexOf(binding);
+    if (idx === -1) {
+      return;
+    }
+    this.bindings.splice(idx, 1);
   }
-};
 
-GameComponent.prototype.doRemove = function() {
-  this._safetyFlag = false;
-  this.onRemove();
-  if (this._safetyFlag === false) {
-    throw new Error("You forget to call onRemove() on supr in an onRemove handler.");
+  /**
+   * Loop through bindings added with addBinding and apply them. Typically
+   * called at start of onTick or onFrame handler.
+   */
+
+  applyBindings() {
+    if (!this.propertyManager) {
+      throw new Error('Couldn\'t find a PropertyManager instance');
+    }
+
+    for (var i = 0, len = this.bindings.length; i < len; i++) {
+      this.propertyManager.applyBinding(this, this.bindings[i]);
+    }
   }
-};
 
-/**
- * Called when component is added to a GameObject. Do component setup
- * logic here.
- */
+  doAdd() {
+    this.propertyManager = this.owner.getManager(PropertyManager);
+    this._safetyFlag = false;
+    this.onAdd();
+    if (this._safetyFlag === false) {
+      throw new Error('You forget to call onAdd() on super in an onAdd override.');
+    }
+  }
 
-GameComponent.prototype.onAdd = function() {
-  this._safetyFlag = true;
-};
+  doRemove() {
+    this._safetyFlag = false;
+    this.onRemove();
+    if (this._safetyFlag === false) {
+      throw new Error('You forget to call onRemove() on super in an onRemove handler.');
+    }
+  }
 
-/**
- * Called when component is removed frmo a GameObject. Do component
- * teardown logic here.
- */
+  /**
+   * Called when component is added to a GameObject. Do component setup
+   * logic here.
+   */
 
-GameComponent.prototype.onRemove = function() {
-  this._safetyFlag = true;
-};
+  onAdd() {
+    this._safetyFlag = true;
+  }
 
-GameComponent.prototype.constructor = GameComponent;
+  /**
+   * Called when component is removed frmo a GameObject. Do component
+   * teardown logic here.
+   */
 
-Object.defineProperty(GameComponent.prototype, "name", {
+  onRemove() {
+    this._safetyFlag = true;
+  }
 
-  get: function() {
+  get name() {
     return this._name;
-  },
+  }
 
-  set: function(value) {
+  set name(value) {
     if (this._owner) {
-      throw new Error("Already added to GameObject, can't change name of GameComponent.");
+      throw new Error('Already added to GameObject, can\'t change name of GameComponent.');
     }
     this._name = value;
   }
 
-});
+  /**
+   * What GameObject contains us, if any?
+   */
 
-/**
- * What GameObject contains us, if any?
- */
-
-Object.defineProperty(GameComponent.prototype, "owner", {
-
-  get: function() {
+  get owner() {
     return this._owner;
   }
 
-});
+}
 
-module.exports = GameComponent;
+GameComponent.prototype.isGameComponent = true;

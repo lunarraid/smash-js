@@ -1,32 +1,32 @@
-var FieldPlugin = require("./FieldPlugin.js");
+import FieldPlugin from './FieldPlugin';
 
-var ComponentPlugin = function() {
-  this.fieldResolver = new FieldPlugin();
-};
+export default class ComponentPlugin {
 
-ComponentPlugin.prototype.resolve = function(context, cached, propertyInfo) {
-  // Context had better be an entity.
-  var entity;
-  if (context.isBaseObject) {
-      entity = context;
-  } else if (context.isGameComponent) {
-      entity = context.owner;
-  } else {
-      throw "Can't find entity to do lookup!";
+  constructor() {
+    this.fieldResolver = new FieldPlugin();
   }
 
-  // Look up the component.
-  var component = entity.lookupComponent(cached[1]);
+  resolve(context, cached, propertyInfo) {
+    // Context had better be an entity.
+    var entity;
+    if (context.isBaseObject) {
+        entity = context;
+    } else if (context.isGameComponent) {
+        entity = context.owner;
+    } else {
+        throw 'Can\'t find entity to do lookup!';
+    }
 
-  if (cached.length > 2) {
+    // Look up the component.
+    var component = entity.lookupComponent(cached[1]);
+
+    if (cached.length > 2) {
       // Look further into the object.
-      this.fieldResolver.resolveFull(component, cached, propertyInfo, 2);
-  } else {
-    propertyInfo.object = component;
-    propertyInfo.field = null;
+      this.fieldResolver.resolve(component, cached, propertyInfo, 2);
+    } else {
+      propertyInfo.object = component;
+      propertyInfo.field = null;
+    }
   }
-};
 
-ComponentPlugin.prototype.constructor = ComponentPlugin;
-
-module.exports = ComponentPlugin;
+}
